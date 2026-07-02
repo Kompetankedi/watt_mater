@@ -52,6 +52,14 @@ echo "current=\$(cat /sys/class/power_supply/battery/current_now 2>/dev/null || 
 echo "charge_full=\$(cat /sys/class/power_supply/bms/charge_full 2>/dev/null || cat /sys/class/power_supply/battery/charge_full 2>/dev/null || echo '0')"
 echo "charge_full_design=\$(cat /sys/class/power_supply/bms/charge_full_design 2>/dev/null || cat /sys/class/power_supply/battery/charge_full_design 2>/dev/null || echo '0')"
 echo "status=\$(cat /sys/class/power_supply/battery/status 2>/dev/null || echo 'Unknown')"
+echo "batt_temp=\$(cat /sys/class/power_supply/battery/temp 2>/dev/null || echo '0')"
+ZONE=\$(grep -li 'cpu' /sys/class/thermal/thermal_zone*/type 2>/dev/null | head -n 1)
+if [ -n "\$ZONE" ]; then
+  TEMP_FILE=\$(echo "\$ZONE" | sed 's/type/temp/')
+  echo "cpu_temp=\$(cat "\$TEMP_FILE" 2>/dev/null || echo '0')"
+else
+  echo "cpu_temp=\$(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null || echo '0')"
+fi
 ''';
     try {
       final result = await Process.run('su', ['-c', script]);
@@ -377,6 +385,25 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
       batteryHealth = (capacityMAh / designCapacityMAh).clamp(0.0, 1.0);
     }
 
+    final rawBattTemp = _parseValue(_stats['batt_temp']);
+    final rawCpuTemp = _parseValue(_stats['cpu_temp']);
+
+    double battTempC = 0.0;
+    if (rawBattTemp.abs() > 100) {
+      battTempC = rawBattTemp / 10.0;
+    } else {
+      battTempC = rawBattTemp;
+    }
+
+    double cpuTempC = 0.0;
+    if (rawCpuTemp.abs() > 1000) {
+      cpuTempC = rawCpuTemp / 1000.0;
+    } else if (rawCpuTemp.abs() > 100) {
+      cpuTempC = rawCpuTemp / 10.0;
+    } else {
+      cpuTempC = rawCpuTemp;
+    }
+
     final statusLower = status.trim().toLowerCase();
     final isCharging = statusLower == 'charging' || (statusLower.contains('charging') && !statusLower.contains('dis') && !statusLower.contains('not'));
     final isFull = percentage >= 100 || statusLower == 'full';
@@ -542,6 +569,18 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
                         title: 'Voltaj',
                         value: '${voltageV.toStringAsFixed(2)} V',
                         color: const Color(0xFF10B981),
+                      ),
+                      _buildInfoCard(
+                        icon: Icons.device_thermostat_rounded,
+                        title: 'Pil Sıcaklığı',
+                        value: battTempC != 0.0 ? '${battTempC.toStringAsFixed(1)} °C' : 'Bilinmiyor',
+                        color: const Color(0xFFF97316),
+                      ),
+                      _buildInfoCard(
+                        icon: Icons.memory_rounded,
+                        title: 'İşlemci Sıcaklığı',
+                        value: cpuTempC != 0.0 ? '${cpuTempC.toStringAsFixed(1)} °C' : 'Bilinmiyor',
+                        color: const Color(0xFF06B6D4),
                       ),
                       _buildInfoCard(
                         icon: Icons.battery_charging_full_rounded,
