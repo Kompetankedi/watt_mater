@@ -377,24 +377,26 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
       batteryHealth = (capacityMAh / designCapacityMAh).clamp(0.0, 1.0);
     }
 
+    final statusLower = status.trim().toLowerCase();
+    final isCharging = statusLower == 'charging' || (statusLower.contains('charging') && !statusLower.contains('dis') && !statusLower.contains('not'));
+    final isFull = percentage >= 100 || statusLower == 'full';
+
     // Time untill full charge
     String timeRemainingStr = "Hesaplanamıyor";
-    if (status.toLowerCase().contains("charging") && currentA > 0.05 && capacityMAh > 0) {
+    if (isFull) {
+      timeRemainingStr = "Tam dolu";
+    } else if (isCharging && currentA > 0.05 && capacityMAh > 0) {
       final remainingMAh = capacityMAh * (100 - percentage) / 100.0;
       final timeHours = remainingMAh / currentMA;
       final timeMins = (timeHours * 60).round();
       if (timeMins > 0) {
-        timeRemainingStr = "\${timeMins} dk sonra tam dolu";
+        timeRemainingStr = "${timeMins} dk sonra tam dolu";
       } else {
         timeRemainingStr = "Neredeyse doldu";
       }
-    } else if (percentage == 100) {
-      timeRemainingStr = "Tam şarjlı";
-    } else if (status.toLowerCase().contains("discharging")) {
+    } else if (!isCharging) {
       timeRemainingStr = "Şarjda değil";
     }
-
-    final isCharging = status.toLowerCase().contains("charging");
 
     return Scaffold(
       body: Stack(
@@ -493,7 +495,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  wattageW.toStringAsFixed(1),
+                                  isCharging ? wattageW.toStringAsFixed(1) : '-${wattageW.toStringAsFixed(1)}',
                                   style: TextStyle(
                                     fontSize: 64,
                                     fontWeight: FontWeight.w900,
@@ -502,12 +504,12 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
                                   ),
                                 ),
                                 Text(
-                                  'WATT',
+                                  isCharging ? 'ŞARJ WATT' : 'DEŞARJ WATT',
                                   style: TextStyle(
-                                    fontSize: 16,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.bold,
-                                    letterSpacing: 2,
-                                    color: isCharging ? const Color(0xFF38BDF8) : Colors.white38,
+                                    letterSpacing: 1.5,
+                                    color: isCharging ? const Color(0xFF38BDF8) : Colors.white54,
                                   ),
                                 ),
                               ],
@@ -531,8 +533,8 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
                     children: [
                       _buildInfoCard(
                         icon: Icons.electric_meter_rounded,
-                        title: 'Miliamper',
-                        value: '${currentMA} mA',
+                        title: isCharging ? 'Akım (Şarj)' : 'Akım (Deşarj)',
+                        value: isCharging ? '${currentMA} mA' : '-${currentMA} mA',
                         color: const Color(0xFFF43F5E),
                       ),
                       _buildInfoCard(
@@ -731,9 +733,13 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
             children: [
               Icon(icon, color: color, size: 20),
               const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(color: Colors.white54, fontSize: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
