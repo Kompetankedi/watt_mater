@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(const WattMeterApp());
@@ -42,24 +43,35 @@ class RootService {
   }
 
   static Future<Map<String, String>> fetchStats() async {
-    const script = '''
+    const script = r'''
 #!/system/bin/sh
 getprop
 echo "---BATTERY---"
-echo "capacity=\$(cat /sys/class/power_supply/battery/capacity 2>/dev/null || echo '0')"
-echo "voltage=\$(cat /sys/class/power_supply/battery/voltage_now 2>/dev/null || echo '0')"
-echo "current=\$(cat /sys/class/power_supply/battery/current_now 2>/dev/null || echo '0')"
-echo "charge_full=\$(cat /sys/class/power_supply/bms/charge_full 2>/dev/null || cat /sys/class/power_supply/battery/charge_full 2>/dev/null || echo '0')"
-echo "charge_full_design=\$(cat /sys/class/power_supply/bms/charge_full_design 2>/dev/null || cat /sys/class/power_supply/battery/charge_full_design 2>/dev/null || echo '0')"
-echo "status=\$(cat /sys/class/power_supply/battery/status 2>/dev/null || echo 'Unknown')"
-echo "batt_temp=\$(cat /sys/class/power_supply/battery/temp 2>/dev/null || echo '0')"
-ZONE=\$(grep -li 'cpu' /sys/class/thermal/thermal_zone*/type 2>/dev/null | head -n 1)
-if [ -n "\$ZONE" ]; then
-  TEMP_FILE=\$(echo "\$ZONE" | sed 's/type/temp/')
-  echo "cpu_temp=\$(cat "\$TEMP_FILE" 2>/dev/null || echo '0')"
+echo "capacity=$(cat /sys/class/power_supply/battery/capacity 2>/dev/null || echo '0')"
+echo "voltage=$(cat /sys/class/power_supply/battery/voltage_now 2>/dev/null || echo '0')"
+echo "current=$(cat /sys/class/power_supply/battery/current_now 2>/dev/null || echo '0')"
+echo "charge_full=$(cat /sys/class/power_supply/bms/charge_full 2>/dev/null || cat /sys/class/power_supply/battery/charge_full 2>/dev/null || echo '0')"
+echo "charge_full_design=$(cat /sys/class/power_supply/bms/charge_full_design 2>/dev/null || cat /sys/class/power_supply/battery/charge_full_design 2>/dev/null || echo '0')"
+echo "status=$(cat /sys/class/power_supply/battery/status 2>/dev/null || echo 'Unknown')"
+echo "batt_temp=$(cat /sys/class/power_supply/battery/temp 2>/dev/null || echo '0')"
+ZONE=$(grep -li 'cpu' /sys/class/thermal/thermal_zone*/type 2>/dev/null | head -n 1)
+if [ -n "$ZONE" ]; then
+  TEMP_FILE=$(echo "$ZONE" | sed 's/type/temp/')
+  echo "cpu_temp=$(cat "$TEMP_FILE" 2>/dev/null || echo '0')"
 else
-  echo "cpu_temp=\$(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null || echo '0')"
+  echo "cpu_temp=$(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null || echo '0')"
 fi
+
+for tz in /sys/class/thermal/thermal_zone*; do
+  if [ -d "$tz" ]; then
+    type=$(cat "$tz/type" 2>/dev/null)
+    temp=$(cat "$tz/temp" 2>/dev/null)
+    if [ -n "$type" ] && [ -n "$temp" ]; then
+      tz_num=$(basename "$tz" | sed 's/thermal_zone//')
+      echo "tz_${type}_${tz_num}=${temp}"
+    fi
+  fi
+done
 ''';
     try {
       final result = await Process.run('su', ['-c', script]);
@@ -85,6 +97,342 @@ fi
     } catch (e) {
       return {};
     }
+  }
+}
+
+class BatteryStats {
+  final Map<String, String> rawStats;
+  final String model;
+  final String androidVer;
+  final String rom;
+  final String status;
+  final int percentage;
+  final double voltageV;
+  final double currentA;
+  final int currentMA;
+  final double wattageW;
+  final int capacityMAh;
+  final int designCapacityMAh;
+  final double batteryHealth;
+  final double cpuTempC;
+  final double battTempC;
+  final String timeRemainingStr;
+  final bool isCharging;
+  final bool isFull;
+
+  BatteryStats({
+    required this.rawStats,
+    required this.model,
+    required this.androidVer,
+    required this.rom,
+    required this.status,
+    required this.percentage,
+    required this.voltageV,
+    required this.currentA,
+    required this.currentMA,
+    required this.wattageW,
+    required this.capacityMAh,
+    required this.designCapacityMAh,
+    required this.batteryHealth,
+    required this.cpuTempC,
+    required this.battTempC,
+    required this.timeRemainingStr,
+    required this.isCharging,
+    required this.isFull,
+  });
+
+  factory BatteryStats.fromMap(Map<String, String> stats, {double? nativeBatteryTemp}) {
+    final model = stats['ro.product.model'] ?? stats['model'] ?? 'Bilinmiyor';
+    final androidVer = stats['ro.build.version.release'] ?? stats['android_ver'] ?? 'Bilinmiyor';
+    
+    final romProp = stats['ro.build.display.id'] ?? stats['ro.modversion'] ?? stats['rom'] ?? '';
+    final romLower = romProp.toLowerCase();
+
+    String romName = 'Bilinmiyor';
+    String romVersion = '';
+
+    if (romLower.contains('crdroid')) {
+      romName = 'crDroid';
+      romVersion = stats['ro.crdroid.build.version'] ?? stats['ro.crdroid.version'] ?? '';
+    } else if (romLower.contains('hyperos') || (stats['ro.mi.os.version.name']?.isNotEmpty ?? false)) {
+      romName = 'HyperOS';
+      romVersion = stats['ro.mi.os.version.name'] ?? '';
+    } else if (romLower.contains('miui') || (stats['ro.miui.ui.version.name']?.isNotEmpty ?? false)) {
+      romName = 'MIUI';
+      romVersion = stats['ro.miui.ui.version.name'] ?? '';
+      if (romVersion.contains('816')) {
+         romName = 'HyperOS';
+      }
+    } else if (romLower.contains('lineage')) {
+      romName = 'LineageOS';
+      romVersion = stats['ro.lineage.build.version'] ?? '';
+    } else if (romLower.contains('evolution')) {
+      romName = 'Evolution X';
+      romVersion = stats['ro.evolution.version'] ?? '';
+    } else if (romLower.contains('pixelos')) {
+      romName = 'PixelOS';
+      romVersion = stats['ro.pixelos.version'] ?? '';
+    } else if (romLower.contains('pixel experience') || romLower.contains('pixelexperience')) {
+      romName = 'Pixel Experience';
+      romVersion = stats['ro.pixel.build.version'] ?? stats['ro.pixelexperience.version'] ?? '';
+    } else if (romLower.contains('arrow')) {
+      romName = 'ArrowOS';
+      romVersion = stats['ro.arrow.version'] ?? '';
+    } else if (romLower.contains('cherish')) {
+      romName = 'CherishOS';
+      romVersion = stats['ro.cherish.version'] ?? stats['ro.cherish.build.version'] ?? '';
+    } else if (romLower.contains('corvus')) {
+      romName = 'Corvus OS';
+      romVersion = stats['ro.corvus.version'] ?? '';
+    } else {
+      final customVerKeys = stats.keys.where((k) => 
+        k.startsWith('ro.') && 
+        (k.endsWith('.version') || k.endsWith('.build.version')) && 
+        !k.startsWith('ro.build.') && !k.startsWith('ro.system.') && 
+        !k.startsWith('ro.vendor.') && !k.startsWith('ro.product.') && 
+        !k.startsWith('ro.boot.')).toList();
+      
+      if (customVerKeys.isNotEmpty) {
+        final key = customVerKeys.first;
+        final parts = key.split('.');
+        if (parts.length > 1) {
+          final extractedName = parts[1];
+          romName = extractedName[0].toUpperCase() + extractedName.substring(1);
+          romVersion = stats[key] ?? '';
+        }
+      } else {
+        final parts = romProp.split(RegExp(r'[-_ ]'));
+        if (parts.isNotEmpty && parts[0].isNotEmpty) {
+            romName = parts[0];
+            final vMatch = RegExp(r'(v?\d+\.\d+(?:\.\d+)?)').firstMatch(romProp);
+            if (vMatch != null) {
+               romVersion = vMatch.group(1) ?? '';
+            }
+        }
+      }
+    }
+
+    String formatVer(String base, String? extra) {
+      if (extra != null && extra.trim().isNotEmpty) {
+        return '$base ${extra.trim()}';
+      }
+      return base;
+    }
+
+    String rom = romVersion.isNotEmpty ? formatVer(romName, romVersion) : romName;
+    if (rom == 'Bilinmiyor' && romProp.isNotEmpty) {
+       rom = romProp;
+    }
+
+    final status = stats['status'] ?? 'Unknown';
+    double parseVal(String? val) {
+      if (val == null || val.isEmpty) return 0.0;
+      return double.tryParse(val) ?? 0.0;
+    }
+
+    final percentage = parseVal(stats['capacity']).toInt();
+    
+    final rawVoltage = parseVal(stats['voltage']);
+    final rawCurrent = parseVal(stats['current']);
+    final rawChargeFull = parseVal(stats['charge_full']);
+    final rawChargeFullDesign = parseVal(stats['charge_full_design']);
+
+    final bool isMicroUnits = rawVoltage > 100000;
+
+    double voltageV = 0.0;
+    if (isMicroUnits) {
+      voltageV = rawVoltage / 1000000.0;
+    } else if (rawVoltage > 100) {
+      voltageV = rawVoltage / 1000.0;
+    } else {
+      voltageV = rawVoltage;
+    }
+
+    double currentA = 0.0;
+    if (isMicroUnits) {
+      currentA = rawCurrent.abs() / 1000000.0;
+    } else if (rawCurrent.abs() > 50) {
+      currentA = rawCurrent.abs() / 1000.0;
+    } else {
+      currentA = rawCurrent.abs();
+    }
+
+    final currentMA = (currentA * 1000).toInt();
+    final wattageW = voltageV * currentA;
+
+    int capacityMAh = 0;
+    if (isMicroUnits) {
+      capacityMAh = (rawChargeFull / 1000).toInt();
+    } else if (rawChargeFull > 100000) {
+      capacityMAh = (rawChargeFull / 1000).toInt();
+    } else {
+      capacityMAh = rawChargeFull.toInt();
+    }
+
+    int designCapacityMAh = 0;
+    if (isMicroUnits) {
+      designCapacityMAh = (rawChargeFullDesign / 1000).toInt();
+    } else if (rawChargeFullDesign > 100000) {
+      designCapacityMAh = (rawChargeFullDesign / 1000).toInt();
+    } else {
+      designCapacityMAh = rawChargeFullDesign.toInt();
+    }
+
+    double batteryHealth = 0.0;
+    if (designCapacityMAh > 0 && capacityMAh > 0) {
+      batteryHealth = (capacityMAh / designCapacityMAh).clamp(0.0, 1.0);
+    }
+
+    double normalizeT(double raw) {
+      final absVal = raw.abs();
+      if (absVal > 10000) {
+        return raw / 1000.0;
+      } else if (absVal > 1000) {
+        return raw / 100.0;
+      } else if (absVal > 100) {
+        return raw / 10.0;
+      }
+      return raw;
+    }
+
+    double battTempC = nativeBatteryTemp ?? 0.0;
+    final tzKeys = stats.keys.where((k) => k.startsWith('tz_')).toList();
+    
+    if (battTempC == 0.0) {
+      final battTzKey = tzKeys.firstWhere(
+        (k) {
+          final lower = k.toLowerCase();
+          return (lower.contains('battery') || lower.contains('batt') || lower.contains('pmic')) &&
+                 !lower.contains('water') && !lower.contains('charger') && !lower.contains('chg');
+        },
+        orElse: () => '',
+      );
+
+      if (battTzKey.isNotEmpty) {
+        final val = parseVal(stats[battTzKey]);
+        if (val != 0.0) {
+          final normalized = normalizeT(val);
+          if (normalized >= 5.0 && normalized <= 65.0) {
+            battTempC = normalized;
+          }
+        }
+      }
+    }
+
+    if (battTempC == 0.0) {
+      final rawBattTemp = parseVal(stats['batt_temp']);
+      battTempC = normalizeT(rawBattTemp);
+    }
+
+    double cpuTempC = 0.0;
+    
+    final skinTzKey = tzKeys.firstWhere(
+      (k) {
+        final lower = k.toLowerCase();
+        return lower.contains('skin') || lower.contains('surface') || lower.contains('back-temp') || lower.contains('back_temp');
+      },
+      orElse: () => '',
+    );
+    
+    final activeCpuTemps = <double>[];
+    for (var key in tzKeys) {
+      final lower = key.toLowerCase();
+      if ((lower.contains('cpu') || lower.contains('apc') || lower.contains('tsens') || lower.contains('xo-therm') || lower.contains('xo_therm')) &&
+          !lower.contains('step') &&
+          !lower.contains('floor') &&
+          !lower.contains('cool') &&
+          !lower.contains('isolated') &&
+          !lower.contains('low') &&
+          !lower.contains('limit') &&
+          !lower.contains('state')) {
+        final val = parseVal(stats[key]);
+        if (val != 0.0) {
+          final normalized = normalizeT(val);
+          if (normalized >= 15.0 && normalized <= 95.0) {
+            activeCpuTemps.add(normalized);
+          }
+        }
+      }
+    }
+
+    double? skinTemp;
+    if (skinTzKey.isNotEmpty) {
+      final val = parseVal(stats[skinTzKey]);
+      if (val != 0.0) {
+        skinTemp = normalizeT(val);
+      }
+    }
+
+    final xoKey = tzKeys.firstWhere(
+      (k) => k.toLowerCase().contains('xo-therm') || k.toLowerCase().contains('xo_therm'),
+      orElse: () => '',
+    );
+    double? xoTemp;
+    if (xoKey.isNotEmpty) {
+      final val = parseVal(stats[xoKey]);
+      if (val != 0.0) {
+        xoTemp = normalizeT(val);
+      }
+    }
+
+    final cleanCpuTemps = activeCpuTemps.where((t) {
+      final isTripPoint = (t - 60.2).abs() < 0.05 || (t - 60.0).abs() < 0.05 || (t - 40.0).abs() < 0.05 || (t - 42.4).abs() < 0.05;
+      return !isTripPoint;
+    }).toList();
+
+    if (cleanCpuTemps.isNotEmpty) {
+      cpuTempC = cleanCpuTemps.reduce((a, b) => a + b) / cleanCpuTemps.length;
+    } else if (xoTemp != null && xoTemp > 15.0 && xoTemp < 60.0) {
+      cpuTempC = xoTemp;
+    } else if (skinTemp != null && skinTemp > 15.0 && skinTemp < 60.0) {
+      cpuTempC = skinTemp;
+    } else if (activeCpuTemps.isNotEmpty) {
+      cpuTempC = activeCpuTemps.reduce((a, b) => a + b) / activeCpuTemps.length;
+    } else {
+      final rawCpuTemp = parseVal(stats['cpu_temp']);
+      cpuTempC = normalizeT(rawCpuTemp);
+    }
+
+    final statusLower = status.trim().toLowerCase();
+    final isCharging = statusLower == 'charging' || (statusLower.contains('charging') && !statusLower.contains('dis') && !statusLower.contains('not'));
+    final isFull = percentage >= 100 || statusLower == 'full';
+
+    String timeRemainingStr = "Hesaplanamıyor";
+    if (isFull) {
+      timeRemainingStr = "Tam dolu";
+    } else if (isCharging && currentA > 0.05 && capacityMAh > 0) {
+      final remainingMAh = capacityMAh * (100 - percentage) / 100.0;
+      final timeHours = remainingMAh / currentMA;
+      final timeMins = (timeHours * 60).round();
+      if (timeMins > 0) {
+        timeRemainingStr = "${timeMins} dk sonra tam dolu";
+      } else {
+        timeRemainingStr = "Neredeyse doldu";
+      }
+    } else if (!isCharging) {
+      timeRemainingStr = "Şarjda değil";
+    }
+
+    return BatteryStats(
+      rawStats: stats,
+      model: model,
+      androidVer: androidVer,
+      rom: rom,
+      status: status,
+      percentage: percentage,
+      voltageV: voltageV,
+      currentA: currentA,
+      currentMA: currentMA,
+      wattageW: wattageW,
+      capacityMAh: capacityMAh,
+      designCapacityMAh: designCapacityMAh,
+      batteryHealth: batteryHealth,
+      cpuTempC: cpuTempC,
+      battTempC: battTempC,
+      timeRemainingStr: timeRemainingStr,
+      isCharging: isCharging,
+      isFull: isFull,
+    );
   }
 }
 
@@ -206,7 +554,8 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> with TickerProviderStateMixin {
   Timer? _timer;
-  Map<String, String> _stats = {};
+  BatteryStats? _batteryStats;
+  static const _batteryChannel = MethodChannel('com.example.watt_mater/battery');
   
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
@@ -236,194 +585,45 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
 
   Future<void> _updateStats() async {
     final stats = await RootService.fetchStats();
+    double? nativeBatteryTemp;
+    try {
+      final double? temp = await _batteryChannel.invokeMethod<double>('getBatteryTemperature');
+      nativeBatteryTemp = temp;
+    } catch (_) {
+      // MethodChannel not available
+    }
+
     if (mounted) {
       setState(() {
-        _stats = stats;
+        _batteryStats = BatteryStats.fromMap(stats, nativeBatteryTemp: nativeBatteryTemp);
       });
     }
   }
 
-  double _parseValue(String? val) {
-    if (val == null || val.isEmpty) return 0.0;
-    return double.tryParse(val) ?? 0.0;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final model = _stats['ro.product.model'] ?? _stats['model'] ?? 'Bilinmiyor';
-    final androidVer = _stats['ro.build.version.release'] ?? _stats['android_ver'] ?? 'Bilinmiyor';
-    
-    final romProp = _stats['ro.build.display.id'] ?? _stats['ro.modversion'] ?? _stats['rom'] ?? '';
-    final romLower = romProp.toLowerCase();
-
-    String romName = 'Bilinmiyor';
-    String romVersion = '';
-
-    if (romLower.contains('crdroid')) {
-      romName = 'crDroid';
-      romVersion = _stats['ro.crdroid.build.version'] ?? _stats['ro.crdroid.version'] ?? '';
-    } else if (romLower.contains('hyperos') || (_stats['ro.mi.os.version.name']?.isNotEmpty ?? false)) {
-      romName = 'HyperOS';
-      romVersion = _stats['ro.mi.os.version.name'] ?? '';
-    } else if (romLower.contains('miui') || (_stats['ro.miui.ui.version.name']?.isNotEmpty ?? false)) {
-      romName = 'MIUI';
-      romVersion = _stats['ro.miui.ui.version.name'] ?? '';
-      if (romVersion.contains('816')) {
-         romName = 'HyperOS';
-      }
-    } else if (romLower.contains('lineage')) {
-      romName = 'LineageOS';
-      romVersion = _stats['ro.lineage.build.version'] ?? '';
-    } else if (romLower.contains('evolution')) {
-      romName = 'Evolution X';
-      romVersion = _stats['ro.evolution.version'] ?? '';
-    } else if (romLower.contains('pixelos')) {
-      romName = 'PixelOS';
-      romVersion = _stats['ro.pixelos.version'] ?? '';
-    } else if (romLower.contains('pixel experience') || romLower.contains('pixelexperience')) {
-      romName = 'Pixel Experience';
-      romVersion = _stats['ro.pixel.build.version'] ?? _stats['ro.pixelexperience.version'] ?? '';
-    } else if (romLower.contains('arrow')) {
-      romName = 'ArrowOS';
-      romVersion = _stats['ro.arrow.version'] ?? '';
-    } else if (romLower.contains('cherish')) {
-      romName = 'CherishOS';
-      romVersion = _stats['ro.cherish.version'] ?? _stats['ro.cherish.build.version'] ?? '';
-    } else if (romLower.contains('corvus')) {
-      romName = 'Corvus OS';
-      romVersion = _stats['ro.corvus.version'] ?? '';
-    } else {
-      final customVerKeys = _stats.keys.where((k) => 
-        k.startsWith('ro.') && 
-        (k.endsWith('.version') || k.endsWith('.build.version')) && 
-        !k.startsWith('ro.build.') && !k.startsWith('ro.system.') && 
-        !k.startsWith('ro.vendor.') && !k.startsWith('ro.product.') && 
-        !k.startsWith('ro.boot.')).toList();
-      
-      if (customVerKeys.isNotEmpty) {
-        final key = customVerKeys.first;
-        final parts = key.split('.');
-        if (parts.length > 1) {
-          final extractedName = parts[1];
-          romName = extractedName[0].toUpperCase() + extractedName.substring(1);
-          romVersion = _stats[key] ?? '';
-        }
-      } else {
-        final parts = romProp.split(RegExp(r'[-_ ]'));
-        if (parts.isNotEmpty && parts[0].isNotEmpty) {
-            romName = parts[0];
-            final vMatch = RegExp(r'(v?\d+\.\d+(?:\.\d+)?)').firstMatch(romProp);
-            if (vMatch != null) {
-               romVersion = vMatch.group(1) ?? '';
-            }
-        }
-      }
+    if (_batteryStats == null) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF38BDF8)),
+        ),
+      );
     }
 
-    String formatVer(String base, String? extra) {
-      if (extra != null && extra.trim().isNotEmpty) {
-        return '$base ${extra.trim()}';
-      }
-      return base;
-    }
-
-    String rom = romVersion.isNotEmpty ? formatVer(romName, romVersion) : romName;
-    if (rom == 'Bilinmiyor' && romProp.isNotEmpty) {
-       rom = romProp;
-    }
-    final status = _stats['status'] ?? 'Unknown';
-    final percentage = _parseValue(_stats['capacity']).toInt();
-    
-    final rawVoltage = _parseValue(_stats['voltage']);
-    final rawCurrent = _parseValue(_stats['current']);
-    final rawChargeFull = _parseValue(_stats['charge_full']);
-    final rawChargeFullDesign = _parseValue(_stats['charge_full_design']);
-
-    // Voltage in Volts
-    double voltageV = 0.0;
-    if (rawVoltage > 100000) {
-      voltageV = rawVoltage / 1000000.0;
-    } else if (rawVoltage > 100) {
-      voltageV = rawVoltage / 1000.0;
-    } else {
-      voltageV = rawVoltage;
-    }
-
-    // Current in Amperes
-    double currentA = 0.0;
-    if (rawCurrent.abs() > 20000) {
-      currentA = rawCurrent.abs() / 1000000.0;
-    } else if (rawCurrent.abs() > 50) {
-      currentA = rawCurrent.abs() / 1000.0;
-    } else {
-      currentA = rawCurrent.abs();
-    }
-    
-    // Sometimes when discharging, battery current can be negative. Let's just use abs for magnitude.
-    final currentMA = (currentA * 1000).toInt();
-    final wattageW = voltageV * currentA;
-
-    // Battery Capacity
-    int capacityMAh = 0;
-    if (rawChargeFull > 100000) {
-      capacityMAh = (rawChargeFull / 1000).toInt();
-    } else {
-      capacityMAh = rawChargeFull.toInt();
-    }
-
-    int designCapacityMAh = 0;
-    if (rawChargeFullDesign > 100000) {
-      designCapacityMAh = (rawChargeFullDesign / 1000).toInt();
-    } else {
-      designCapacityMAh = rawChargeFullDesign.toInt();
-    }
-    
-    // If the OS returns 0 for design capacity but we know it should have one, we could leave it 0
-    // and it just won't show the health bar.
-    double batteryHealth = 0.0;
-    if (designCapacityMAh > 0 && capacityMAh > 0) {
-      batteryHealth = (capacityMAh / designCapacityMAh).clamp(0.0, 1.0);
-    }
-
-    final rawBattTemp = _parseValue(_stats['batt_temp']);
-    final rawCpuTemp = _parseValue(_stats['cpu_temp']);
-
-    double battTempC = 0.0;
-    if (rawBattTemp.abs() > 100) {
-      battTempC = rawBattTemp / 10.0;
-    } else {
-      battTempC = rawBattTemp;
-    }
-
-    double cpuTempC = 0.0;
-    if (rawCpuTemp.abs() > 1000) {
-      cpuTempC = rawCpuTemp / 1000.0;
-    } else if (rawCpuTemp.abs() > 100) {
-      cpuTempC = rawCpuTemp / 10.0;
-    } else {
-      cpuTempC = rawCpuTemp;
-    }
-
-    final statusLower = status.trim().toLowerCase();
-    final isCharging = statusLower == 'charging' || (statusLower.contains('charging') && !statusLower.contains('dis') && !statusLower.contains('not'));
-    final isFull = percentage >= 100 || statusLower == 'full';
-
-    // Time untill full charge
-    String timeRemainingStr = "Hesaplanamıyor";
-    if (isFull) {
-      timeRemainingStr = "Tam dolu";
-    } else if (isCharging && currentA > 0.05 && capacityMAh > 0) {
-      final remainingMAh = capacityMAh * (100 - percentage) / 100.0;
-      final timeHours = remainingMAh / currentMA;
-      final timeMins = (timeHours * 60).round();
-      if (timeMins > 0) {
-        timeRemainingStr = "${timeMins} dk sonra tam dolu";
-      } else {
-        timeRemainingStr = "Neredeyse doldu";
-      }
-    } else if (!isCharging) {
-      timeRemainingStr = "Şarjda değil";
-    }
+    final stats = _batteryStats!;
+    final model = stats.model;
+    final androidVer = stats.androidVer;
+    final rom = stats.rom;
+    final percentage = stats.percentage;
+    final voltageV = stats.voltageV;
+    final currentMA = stats.currentMA;
+    final wattageW = stats.wattageW;
+    final capacityMAh = stats.capacityMAh;
+    final designCapacityMAh = stats.designCapacityMAh;
+    final batteryHealth = stats.batteryHealth;
+    final battTempC = stats.battTempC;
+    final isCharging = stats.isCharging;
+    final timeRemainingStr = stats.timeRemainingStr;
 
     return Scaffold(
       body: Stack(
@@ -571,18 +771,6 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
                         color: const Color(0xFF10B981),
                       ),
                       _buildInfoCard(
-                        icon: Icons.device_thermostat_rounded,
-                        title: 'Pil Sıcaklığı',
-                        value: battTempC != 0.0 ? '${battTempC.toStringAsFixed(1)} °C' : 'Bilinmiyor',
-                        color: const Color(0xFFF97316),
-                      ),
-                      _buildInfoCard(
-                        icon: Icons.memory_rounded,
-                        title: 'İşlemci Sıcaklığı',
-                        value: cpuTempC != 0.0 ? '${cpuTempC.toStringAsFixed(1)} °C' : 'Bilinmiyor',
-                        color: const Color(0xFF06B6D4),
-                      ),
-                      _buildInfoCard(
                         icon: Icons.battery_charging_full_rounded,
                         title: 'Kapasite',
                         value: capacityMAh > 0 ? '${capacityMAh} mAh' : 'Bilinmiyor',
@@ -595,6 +783,52 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
                         color: const Color(0xFF8B5CF6),
                       ),
                     ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Battery Temp Card
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E293B).withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Colors.white10),
+                    ),
+                    child: Row(
+                      children: [
+                         Container(
+                           padding: const EdgeInsets.all(12),
+                           decoration: BoxDecoration(
+                             color: const Color(0xFFF97316).withOpacity(0.1),
+                             shape: BoxShape.circle,
+                           ),
+                           child: const Icon(Icons.device_thermostat_rounded, color: Color(0xFFF97316)),
+                         ),
+                         const SizedBox(width: 16),
+                         Expanded(
+                           child: Column(
+                             crossAxisAlignment: CrossAxisAlignment.start,
+                             children: [
+                               const Text(
+                                 'Pil Sıcaklığı',
+                                 style: TextStyle(color: Colors.white54, fontSize: 13),
+                               ),
+                               const SizedBox(height: 4),
+                               Text(
+                                 battTempC != 0.0 ? '${battTempC.toStringAsFixed(1)} °C' : 'Bilinmiyor',
+                                 style: const TextStyle(
+                                   color: Colors.white,
+                                   fontSize: 18,
+                                   fontWeight: FontWeight.bold,
+                                 ),
+                               ),
+                             ],
+                           ),
+                         )
+                      ],
+                    ),
                   ),
 
                   const SizedBox(height: 16),
