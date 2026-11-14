@@ -3,12 +3,14 @@
   <h1>⚡ Watt Meter ⚡</h1>
   <p>
     <b>Real-time Battery Power Monitor, Charging Protocol Detection (PD vs QC), and Current Limiter for Android.</b><br>
-    <b>Android için Gerçek Zamanlı Güç Monitörü, Şarj Protokolü Tespiti (PD vs QC) ve Akım Sınırlandırıcı.</b>
+    <b>Android için Gerçek Zamanlı Güç Monitörü, Şarj Protokolü Tespiti (PD vs QC) ve Akım Sınırlandırıcı.</b><br>
+    <b>Monitor de energía de batería en tiempo real, detección de protocolo de carga (PD vs QC) y limitador de corriente para Android.</b>
   </p>
 
   <p>
     <a href="#english-"><strong>English 🇬🇧</strong></a> ·
-    <a href="#türkçe-"><strong>Türkçe 🇹🇷</strong></a>
+    <a href="#türkçe-"><strong>Türkçe 🇹🇷</strong></a> ·
+    <a href="#español-"><strong>Español 🇪🇸</strong></a>
   </p>
 
   <p>
@@ -62,8 +64,8 @@ Protect battery health and reduce charging heat:
 * **Rooted Mode:** Requires Magisk, KernelSU, or APatch. Unlocks PMIC register reads and charge current limits.
 * **Rootless Mode:** Works out of the box on non-rooted phones using Android BatteryManager APIs and permission-free kernel nodes.
 
-### 6. 🌐 Dual-Language Support
-* Fully localized in **English** and **Turkish** with instant switching from the Settings sheet.
+### 6. 🌐 Multi-Language Support
+* Fully localized in **English**, **Turkish**, and **Spanish** with instant switching from the Settings sheet.
 
 ---
 
@@ -167,8 +169,8 @@ Pil ömrünü korumak ve şarj sırasındaki aşırı ısınmayı engellemek iç
 * **Rootlu Mod:** Magisk, KernelSU veya APatch yetkisiyle tam PMIC donanım okuması ve şarj sınırlama yeteneği.
 * **Rootsuz Mod:** Root yetkisi olmayan cihazlarda Android BatteryManager API'leri ve izin verilen sysfs yollarıyla temel izleme.
 
-### 6. 🌐 Çift Dil Desteği
-* **Türkçe** ve **İngilizce** dilleri arasında Ayarlar menüsünden anında geçiş imkanı.
+### 6. 🌐 Çoklu Dil Desteği
+* **Türkçe**, **İngilizce** ve **İspanyolca** dilleri arasında Ayarlar menüsünden anında geçiş imkanı.
 
 ---
 
@@ -229,3 +231,54 @@ Oluşturulan APK dosyaları şu dizinde yer alır:
 ## 📜 Lisans
 
 Bu proje **MIT Lisansı** ile lisanslanmıştır. Özgürce inceleyebilir, değiştirebilir ve projelerinizde kullanabilirsiniz.
+
+---
+
+# Español 🇪🇸
+
+**Watt Meter** es una aplicación Flutter de código abierto diseñada para Android que monitorea métricas de batería a nivel de hardware, protocolos de suministro de energía y registros PMIC en tiempo real. Diseñada con una estética oscura cyberpunk moderna, funciona tanto en modo **Con Root** (control completo de PMIC) como **Sin Root** (métricas estándar de batería).
+
+---
+
+## 🚀 Características Principales
+
+### 1. ⚡ Detección de Protocolo de Carga (PD vs QC) [BETA]
+¿Se está cargando su teléfono con **USB Power Delivery (PD)** o **Qualcomm Quick Charge (QC)**? Watt Meter verifica los registros de hardware del kernel directamente:
+* **Clasificación de Protocolos:**
+  * **USB Power Delivery (PD):** Negociación digital de pines CC Tipo C (5V, 9V, 12V, 15V, 20V).
+  * **USB-PD 3.0 PPS:** Fuente de alimentación programable con voltaje dinámico de 20mV.
+  * **Qualcomm Quick Charge (QC):** QC 2.0 (9V/12V fijo), QC 3.0 (pasos de 200mV), QC 3+ y QC 4/4+ (híbrido PD-PPS).
+  * **Carga Rápida OEM:** Xiaomi Mi Turbo Charge / HyperCharge, SuperVOOC / Warp / Dart, Samsung Fast Charging (AFC), Cargador estándar (DCP 5V) y Puerto de PC (SDP/CDP).
+* **Escalera Visual de 4 Pasos:** Muestra de inmediato si la carga está en `Estándar 5V`, `Qualcomm QC`, `USB-PD` o `PD-PPS / Turbo`.
+* **Indicador de Velocidad de 5 Niveles:** Clasifica la velocidad de carga en *Lenta, Normal, Rápida, Súper rápida* y *Ultra/Turbo*.
+* **Matriz PMIC de Hardware en Vivo:** Muestra el estado de PD, QC, registro PMIC sysfs y voltaje de línea en tiempo real.
+* **Guía de Protocolos en la App:** Guía integrada que explica las diferencias entre USB-PD y Qualcomm QC.
+
+### 2. 🛡️ Limitador de Velocidad de Carga (Con Root) [BETA]
+Proteja la salud de la batería y reduzca el calentamiento:
+* **Límites de mA Personalizados:** Ajuste la corriente máxima directamente al kernel (ej. 1500 mA, 2000 mA).
+* **Preajustes Rápidos en Vatios:** Botones directos de **5W** a **120W**, más botón **Restablecer**.
+* Escribe directamente en `/sys/class/power_supply/battery/constant_charge_current_max` y nodos sysfs compatibles.
+
+### 3. 📊 Análisis de Energía y Descarga en Tiempo Real
+* **Potencia en Vivo (Vatios):** Potencia calculada en tiempo real ($P = V \times I$) con animación de respiración dinámica.
+* **Medición Precisa de Descarga:** Al desconectar, muestra corriente negativa ($-mA$) y vatios de descarga para medir consumo con pantalla encendida o apagada.
+* **Voltaje y Corriente Precisos:** Lecturas en tiempo real en milivoltios y miliamperios.
+
+### 4. 🔋 Salud y Estimación de Batería
+* **Porcentaje de Salud:** Compara `charge_full` vs `charge_full_design` para calcular la capacidad restante de la batería.
+* **Tiempo Inteligente de Carga Completa:** Cálculo dinámico del tiempo restante hasta el 100%.
+* **Sensor Térmico:** Temperatura de la batería en tiempo real en °C.
+
+### 5. 📱 Modos Duales de Operación
+* **Modo Con Root:** Requiere Magisk, KernelSU o APatch. Desbloquea lectura de registros PMIC y límites de corriente de carga.
+* **Modo Sin Root:** Funciona de inmediato en dispositivos sin root utilizando APIs de Android BatteryManager y nodos sysfs públicos.
+
+### 6. 🌐 Soporte Multilingüe
+* Totalmente localizado en **Español**, **Inglés** y **Turco** con cambio instantáneo desde el menú de Ajustes.
+
+---
+
+## 📜 Licencia
+
+Este proyecto está bajo la Licencia **MIT**.

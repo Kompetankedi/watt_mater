@@ -21,7 +21,7 @@ class LanguageManager {
 
   static String translate(String key, [List<String>? args]) {
     final translations =
-        _localizedValues[localeNotifier.value] ?? _localizedValues['tr']!;
+        _localizedValues[localeNotifier.value] ?? _localizedValues['en'] ?? _localizedValues['tr']!;
     var value = translations[key] ?? key;
     if (args != null && args.isNotEmpty) {
       for (var arg in args) {
@@ -81,6 +81,7 @@ class LanguageManager {
       'root_status_not_found': 'Root izni alınamadı, rootsuz moda geçiliyor.',
       'turkish': 'Türkçe',
       'english': 'English',
+      'spanish': 'İspanyolca',
       'rooted': 'Rootlu',
       'rootless': 'Rootsuz',
       'close': 'Kapat',
@@ -224,6 +225,7 @@ class LanguageManager {
           'Root permission not granted, switching to rootless mode.',
       'turkish': 'Turkish',
       'english': 'English',
+      'spanish': 'Spanish',
       'rooted': 'Rooted',
       'rootless': 'Rootless',
       'close': 'Close',
@@ -316,6 +318,143 @@ class LanguageManager {
       'how_we_detect_desc':
           'With root access or when kernel permits, hardware registers like /sys/class/power_supply/usb/real_type, pd_active, and quick_charge_type are read directly from the phone\'s PMIC. This reveals the exact hardware handshake between the charger and phone with 100% accuracy.',
       'protocol_registers': 'Hardware Registers (Sysfs Dump)',
+    },
+    'es': {
+      'app_title': 'Watt Meter',
+      'how_to_continue': '¿Cómo desea continuar?',
+      'rooted_mode': 'Modo Root (Control total)',
+      'rootless_mode': 'Modo Sin Root (Datos limitados)',
+      'checking_root': 'Verificando acceso root...',
+      'root_required': 'Acceso root requerido',
+      'root_required_desc': 'Watt Meter necesita acceso root para acceder a la información del hardware de la batería. Conceda permiso mediante Magisk o KernelSU.',
+      'retry_root': 'Solicitar acceso root / Reintentar',
+      'root_active': 'ROOT ACTIVO',
+      'rootless_active': 'MODO SIN ROOT',
+      'charge_watt': 'VATIOS DE CARGA',
+      'discharge_watt': 'VATIOS DE DESCARGA',
+      'current_charge': 'Corriente (Carga)',
+      'current_discharge': 'Corriente (Descarga)',
+      'voltage': 'Voltaje',
+      'capacity': 'Capacidad',
+      'charge_percentage': 'Nivel',
+      'unknown': 'Desconocido',
+      'battery_temp': 'Temperatura de la batería',
+      'charge_time_est': 'Tiempo restante estimado',
+      'full': 'Completamente cargado',
+      'almost_full': 'Casi lleno',
+      'not_charging': 'No está cargando',
+      'cannot_calculate': 'No se puede calcular',
+      'full_in_mins': 'Carga completa en {} min',
+      'battery_health': 'Salud / Vida útil de la batería',
+      'device_info': 'Información del dispositivo',
+      'model': 'Modelo',
+      'android_version': 'Versión de Android',
+      'rom_version': 'Versión de ROM',
+      'charge_limiter': 'Limitador de velocidad de carga (Beta)',
+      'manual_ma': 'Manual (mA)',
+      'example_ma': 'Ej.: 2000',
+      'apply': 'APLICAR',
+      'quick_limits': 'Límites rápidos (Estimado por valor de vatios):',
+      'reset': 'RESTABLECER',
+      'limit_reset_msg': 'Límite de carga restablecido',
+      'limit_set_msg': 'Límite ajustado a {} mA',
+      'limit_watt_set_msg': 'Límite ajustado a {}W (~{} mA)',
+      'settings': 'Ajustes',
+      'language': 'Idioma',
+      'working_mode': 'Modo de trabajo',
+      'save': 'Guardar',
+      'mode_changed_msg': 'Modo de trabajo cambiado, actualizando aplicación',
+      'root_status_not_found': 'Permiso root no concedido, cambiando a modo sin root.',
+      'turkish': 'Turco',
+      'english': 'Inglés',
+      'spanish': 'Español',
+      'rooted': 'Con Root',
+      'rootless': 'Sin Root',
+      'close': 'Cerrar',
+      'active': 'Activo',
+      'inactive': 'Inactivo',
+      'select_language': 'Seleccionar idioma',
+      'select_language_desc': 'Elija un idioma para continuar',
+      'continue_btn': 'Continuar',
+      'beta': 'BETA',
+      'charging_protocol': 'Protocolo de carga',
+      'beta_warning_title': 'AVISO DE FUNCIÓN BETA',
+      'protocol_beta_warning': 'La detección del protocolo de carga está actualmente en fase Beta. Según el SoC (Qualcomm, MediaTek, Exynos, Tensor), ROM personalizada o controladores del kernel, los resultados del protocolo pueden variar o mostrar imprecisiones.',
+      'protocol_beta_warning_short': 'Beta: La detección del protocolo puede variar o contener imprecisiones según el dispositivo y el kernel.',
+      'pd_vs_qc_title': '¿PD o QC?',
+      'pmic_verified': 'PMIC verificado',
+      'estimated_mode': 'Estimación sin root',
+      'sub_mi_turbo_pps': 'USB-PD PPS + Mi Turbo Charge',
+      'sub_mi_turbo': 'Carga turbo basada en protocolo USB-PD',
+      'sub_pd_pps': 'USB Power Delivery 3.0 PPS (Voltaje dinámico de 20mV)',
+      'sub_pd': 'USB Type-C Power Delivery (Negociación digital CC)',
+      'sub_qc4': 'Qualcomm QC 4/4+ (Estándar dual USB-PD PPS)',
+      'sub_qc3p': 'Qualcomm Quick Charge 3+ (HVDCP 3+)',
+      'sub_qc3': 'Qualcomm Quick Charge 3.0 (Voltaje escalonado de 200mV)',
+      'sub_qc2': 'Qualcomm Quick Charge 2.0 (Alto voltaje fijo de 9V/12V)',
+      'sub_qc': 'Carga rápida Qualcomm HVDCP',
+      'sub_supervooc': 'Tecnología de alta corriente SuperVOOC / Warp / Dart',
+      'sub_samsung_afc': 'Samsung Carga Rápida (AFC 15W)',
+      'sub_dcp': 'Puerto de carga dedicado (Adaptador estándar de 5V)',
+      'sub_wireless': 'Carga por inducción inalámbrica (Estándar Qi)',
+      'sub_slow_usb': 'Puerto de datos USB estándar / PC (500mA - 900mA)',
+      'sub_est_ultra': '~{}W Potencia (Probable PD PPS / Turbo)',
+      'title_est_fast': 'Carga rápida (PD / QC)',
+      'sub_est_fast': '~{}W Carga rápida (Compatible con USB-PD o QC)',
+      'sub_est_dcp': '~{}W Carga rápida estándar',
+      'sub_est_slow': '~{}W Baja potencia (USB estándar)',
+      'ladder_pd_active': '⚡ USB-PD ACTIVO',
+      'ladder_qc_active': '⚡ QUALCOMM QC ACTIVO',
+      'status_active_fmt': 'Activo ({})',
+      'status_disabled': 'Desactivado (0)',
+      'status_hardware': 'Activo (Hardware)',
+      'line_volt_fmt': '{} V (Línea)',
+      'volt_standard': '~5.0 V (Estándar)',
+      'volt_qc_hvdcp': '~9.0 V (QC HVDCP)',
+      'volt_pd_high': '~9.0V - 15.0V (PD)',
+      'volt_pd_profile': '~9.0 V (Perfil PD)',
+      'pmic_read': 'LEÍDO',
+      'pmic_rootless': 'SIN ROOT',
+      'protocol_pd': 'USB Power Delivery (PD)',
+      'protocol_pd_pps': 'USB-PD PPS (Voltaje dinámico)',
+      'protocol_qc': 'Qualcomm Quick Charge (QC)',
+      'protocol_qc2': 'Qualcomm Quick Charge 2.0 (QC 2.0)',
+      'protocol_qc3': 'Qualcomm Quick Charge 3.0 (QC 3.0)',
+      'protocol_qc3p': 'Qualcomm Quick Charge 3+ (QC 3+)',
+      'protocol_qc4': 'Qualcomm Quick Charge 4/4+ (PD PPS)',
+      'protocol_mi_turbo': 'Mi Turbo Charge / HyperCharge',
+      'protocol_supervooc': 'SuperVOOC / Warp / Dart',
+      'protocol_samsung_afc': 'Carga rápida Samsung (AFC)',
+      'protocol_dcp': 'Cargador rápido estándar (DCP 5V)',
+      'protocol_sdp_cdp': 'Puerto USB estándar (PC / Lento)',
+      'protocol_wireless': 'Carga inalámbrica (Qi)',
+      'protocol_discharging': 'Descargando (Energía de batería)',
+      'protocol_unknown': 'Detectando protocolo...',
+      'active_connection': 'CONEXIÓN ACTIVA',
+      'inactive_connection': 'DESCONECTADO',
+      'pd_status': 'Estado PD',
+      'qc_status': 'Estado QC',
+      'pmic_register': 'Registro PMIC',
+      'line_voltage': 'Voltaje de entrada / línea',
+      'speed_level': 'Nivel de velocidad de carga',
+      'speed_slow': 'Carga lenta',
+      'speed_normal': 'Carga normal',
+      'speed_fast': 'Carga rápida',
+      'speed_super': 'Súper rápida',
+      'speed_ultra': 'Ultra / Turbo',
+      'step_standard_5v': 'Estándar 5V',
+      'step_qualcomm_qc': 'Qualcomm QC',
+      'step_usb_pd': 'USB-PD',
+      'step_pd_pps_turbo': 'PD-PPS / Turbo',
+      'info_sheet_title': 'Protocolos de carga: PD vs QC',
+      'info_sheet_subtitle': 'Acerca de la tecnología de carga de su teléfono',
+      'what_is_pd_title': '¿Qué es USB Power Delivery (PD)?',
+      'what_is_pd_desc': 'Un estándar universal Tipo C desarrollado por el USB Implementers Forum. Los dispositivos negocian perfiles de energía digitalmente a través de pines CC. Admite 5V, 9V, 12V, 15V, 20V y PPS (pasos de 20mV) para minimizar el calentamiento. Se utiliza en todos los dispositivos Android e iPhone modernos.',
+      'what_is_qc_title': '¿Qué es Qualcomm Quick Charge (QC)?',
+      'what_is_qc_desc': 'Una tecnología patentada de carga de alto voltaje desarrollada por Qualcomm para dispositivos Snapdragon. Aumenta el voltaje de 5V a 9V o 12V a través de líneas de datos USB D+/D- (HVDCP). QC 4 y posteriores también integran el estándar USB-PD.',
+      'how_we_detect_title': '¿Cómo lo detecta la aplicación?',
+      'how_we_detect_desc': 'Con acceso root o cuando el kernel lo permite, los registros de hardware como /sys/class/power_supply/usb/real_type, pd_active y quick_charge_type se leen directamente del PMIC del teléfono. Esto muestra la negociación exacta de hardware entre el cargador y el teléfono con 100% de precisión.',
+      'protocol_registers': 'Registros de hardware (Volcado Sysfs)',
     },
   };
 }
@@ -1463,11 +1602,13 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
           ),
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(32.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
+          child: Center(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
                 const Icon(
                   Icons.language_rounded,
                   size: 80,
@@ -1485,7 +1626,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Select Language / Dil Seçin',
+                  'Select Language / Dil Seçin / Seleccionar idioma',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 16, color: Colors.white70),
                 ),
@@ -1503,6 +1644,13 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                   flag: '🇹🇷',
                   value: 'tr',
                 ),
+                const SizedBox(height: 16),
+                _buildLangOption(
+                  label: 'Español',
+                  subtitle: 'Spanish',
+                  flag: '🇪🇸',
+                  value: 'es',
+                ),
                 const SizedBox(height: 48),
                 ElevatedButton(
                   onPressed: () async {
@@ -1517,7 +1665,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                     ),
                   ),
                   child: Text(
-                    _selected == 'en' ? 'Continue' : 'Devam Et',
+                    _selected == 'en' ? 'Continue' : (_selected == 'es' ? 'Continuar' : 'Devam Et'),
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -1528,6 +1676,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }
@@ -1559,24 +1708,26 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
           children: [
             Text(flag, style: const TextStyle(fontSize: 28)),
             const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: isSelected ? const Color(0xFF38BDF8) : Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: isSelected ? const Color(0xFF38BDF8) : Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                Text(
-                  subtitle,
-                  style: const TextStyle(color: Colors.white54, fontSize: 13),
-                ),
-              ],
+                  Text(
+                    subtitle,
+                    style: const TextStyle(color: Colors.white54, fontSize: 13),
+                  ),
+                ],
+              ),
             ),
-            const Spacer(),
+            const SizedBox(width: 8),
             if (isSelected)
               const Icon(
                 Icons.check_circle_rounded,
@@ -1646,22 +1797,32 @@ class SettingsBottomSheetContent extends StatelessWidget {
             ValueListenableBuilder<String>(
               valueListenable: LanguageManager.localeNotifier,
               builder: (context, locale, child) {
-                return Row(
-                  children: [
-                    _buildOptionButton(
-                      context: context,
-                      label: tr('turkish'),
-                      isSelected: locale == 'tr',
-                      onTap: () => SettingsManager.setLanguage('tr'),
-                    ),
-                    const SizedBox(width: 12),
-                    _buildOptionButton(
-                      context: context,
-                      label: tr('english'),
-                      isSelected: locale == 'en',
-                      onTap: () => SettingsManager.setLanguage('en'),
-                    ),
-                  ],
+                return IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildOptionButton(
+                        context: context,
+                        label: tr('turkish'),
+                        isSelected: locale == 'tr',
+                        onTap: () => SettingsManager.setLanguage('tr'),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildOptionButton(
+                        context: context,
+                        label: tr('english'),
+                        isSelected: locale == 'en',
+                        onTap: () => SettingsManager.setLanguage('en'),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildOptionButton(
+                        context: context,
+                        label: tr('spanish'),
+                        isSelected: locale == 'es',
+                        onTap: () => SettingsManager.setLanguage('es'),
+                      ),
+                    ],
+                  ),
                 );
               },
             ),
@@ -1679,28 +1840,31 @@ class SettingsBottomSheetContent extends StatelessWidget {
             ValueListenableBuilder<String?>(
               valueListenable: SettingsManager.workingModeNotifier,
               builder: (context, mode, child) {
-                return Row(
-                  children: [
-                    _buildOptionButton(
-                      context: context,
-                      label: tr('rooted'),
-                      isSelected: mode == 'rooted',
-                      onTap: () {
-                        SettingsManager.setWorkingMode('rooted');
-                        Navigator.pop(context);
-                      },
-                    ),
-                    const SizedBox(width: 12),
-                    _buildOptionButton(
-                      context: context,
-                      label: tr('rootless'),
-                      isSelected: mode == 'rootless',
-                      onTap: () {
-                        SettingsManager.setWorkingMode('rootless');
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ],
+                return IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildOptionButton(
+                        context: context,
+                        label: tr('rooted'),
+                        isSelected: mode == 'rooted',
+                        onTap: () {
+                          SettingsManager.setWorkingMode('rooted');
+                          Navigator.pop(context);
+                        },
+                      ),
+                      const SizedBox(width: 12),
+                      _buildOptionButton(
+                        context: context,
+                        label: tr('rootless'),
+                        isSelected: mode == 'rootless',
+                        onTap: () {
+                          SettingsManager.setWorkingMode('rootless');
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ],
+                  ),
                 );
               },
             ),
@@ -1722,7 +1886,7 @@ class SettingsBottomSheetContent extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
           decoration: BoxDecoration(
             color: isSelected
                 ? const Color(0xFF38BDF8).withValues(alpha: 0.15)
@@ -1736,10 +1900,12 @@ class SettingsBottomSheetContent extends StatelessWidget {
           alignment: Alignment.center,
           child: Text(
             label,
+            textAlign: TextAlign.center,
+            softWrap: true,
             style: TextStyle(
               color: isSelected ? const Color(0xFF38BDF8) : Colors.white70,
               fontWeight: FontWeight.bold,
-              fontSize: 15,
+              fontSize: 14,
             ),
           ),
         ),
@@ -2329,46 +2495,61 @@ class _DashboardScreenState extends State<DashboardScreen>
 
                   const SizedBox(height: 28),
 
-                  // Info Grid
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    childAspectRatio: 1.4,
-                    children: [
-                      _buildInfoCard(
-                        icon: Icons.electric_meter_rounded,
-                        title: isCharging
-                            ? tr('current_charge')
-                            : tr('current_discharge'),
-                        value: isCharging
-                            ? '$currentMA mA'
-                            : '-$currentMA mA',
-                        color: const Color(0xFFF43F5E),
-                      ),
-                      _buildInfoCard(
-                        icon: Icons.electrical_services_rounded,
-                        title: tr('voltage'),
-                        value: '${voltageV.toStringAsFixed(2)} V',
-                        color: const Color(0xFF10B981),
-                      ),
-                      _buildInfoCard(
-                        icon: Icons.battery_charging_full_rounded,
-                        title: tr('capacity'),
-                        value: capacityMAh > 0
-                            ? '$capacityMAh mAh'
-                            : tr('unknown'),
-                        color: const Color(0xFFF59E0B),
-                      ),
-                      _buildInfoCard(
-                        icon: Icons.percent_rounded,
-                        title: tr('charge_percentage'),
-                        value: '%$percentage',
-                        color: const Color(0xFF8B5CF6),
-                      ),
-                    ],
+                  // Info Grid (Dynamic Sizing)
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: _buildInfoCard(
+                            icon: Icons.electric_meter_rounded,
+                            title: isCharging
+                                ? tr('current_charge')
+                                : tr('current_discharge'),
+                            value: isCharging
+                                ? '$currentMA mA'
+                                : '-$currentMA mA',
+                            color: const Color(0xFFF43F5E),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _buildInfoCard(
+                            icon: Icons.electrical_services_rounded,
+                            title: tr('voltage'),
+                            value: '${voltageV.toStringAsFixed(2)} V',
+                            color: const Color(0xFF10B981),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: _buildInfoCard(
+                            icon: Icons.battery_charging_full_rounded,
+                            title: tr('capacity'),
+                            value: capacityMAh > 0
+                                ? '$capacityMAh mAh'
+                                : tr('unknown'),
+                            color: const Color(0xFFF59E0B),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _buildInfoCard(
+                            icon: Icons.percent_rounded,
+                            title: tr('charge_percentage'),
+                            value: '%$percentage',
+                            color: const Color(0xFF8B5CF6),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
 
                   const SizedBox(height: 16),
@@ -2617,12 +2798,15 @@ class _DashboardScreenState extends State<DashboardScreen>
             children: [
               const Icon(Icons.speed_rounded, color: Color(0xFFF43F5E)),
               const SizedBox(width: 8),
-              Text(
-                tr('charge_limiter'),
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+              Expanded(
+                child: Text(
+                  tr('charge_limiter'),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  softWrap: true,
                 ),
               ),
             ],
@@ -2773,9 +2957,10 @@ class _DashboardScreenState extends State<DashboardScreen>
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(icon, color: color, size: 20),
               const SizedBox(width: 8),
@@ -2783,13 +2968,12 @@ class _DashboardScreenState extends State<DashboardScreen>
                 child: Text(
                   title,
                   style: const TextStyle(color: Colors.white54, fontSize: 12),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  softWrap: true,
                 ),
               ),
             ],
           ),
-          const Spacer(),
+          const SizedBox(height: 12),
           Text(
             value,
             style: const TextStyle(
@@ -2797,8 +2981,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            softWrap: true,
           ),
         ],
       ),
@@ -2807,14 +2990,19 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Widget _buildDeviceRow(String title, String value) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          title,
-          style: const TextStyle(color: Colors.white54, fontSize: 14),
+        Flexible(
+          flex: 2,
+          child: Text(
+            title,
+            style: const TextStyle(color: Colors.white54, fontSize: 14),
+          ),
         ),
         const SizedBox(width: 16),
         Flexible(
+          flex: 3,
           child: Text(
             value,
             style: const TextStyle(
@@ -2858,8 +3046,9 @@ class _DashboardScreenState extends State<DashboardScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Row: Title, Beta Badge, and Info Button
+          // Header Row: Title, Beta Badge, and Info Button (Dynamic layout, never truncates)
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
                 padding: const EdgeInsets.all(7),
@@ -2873,27 +3062,25 @@ class _DashboardScreenState extends State<DashboardScreen>
                   size: 18,
                 ),
               ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+              const SizedBox(width: 10),
+              Expanded(
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 6,
+                  runSpacing: 4,
                   children: [
-                    Flexible(
-                      child: Text(
-                        tr('charging_protocol'),
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                          color: Colors.white,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                    Text(
+                      tr('charging_protocol'),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                        color: Colors.white,
                       ),
                     ),
-                    const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 5,
+                        horizontal: 6,
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
@@ -2917,7 +3104,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                   ],
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               IconButton(
                 icon: const Icon(
                   Icons.help_outline_rounded,
@@ -2934,60 +3121,57 @@ class _DashboardScreenState extends State<DashboardScreen>
 
           const SizedBox(height: 12),
 
-          // Sub-Header Badges: Hardware Verification & Connection Status
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Sub-Header Badges: Hardware Verification & Connection Status (Wrap prevents overflow/truncation)
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            runSpacing: 6,
+            spacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Flexible(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: info.isVerifiedHardware
+                      ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                      : const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
                     color: info.isVerifiedHardware
-                        ? const Color(0xFF10B981).withValues(alpha: 0.15)
-                        : const Color(0xFFF59E0B).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: info.isVerifiedHardware
-                          ? const Color(0xFF10B981).withValues(alpha: 0.4)
-                          : const Color(0xFFF59E0B).withValues(alpha: 0.4),
-                    ),
+                        ? const Color(0xFF10B981).withValues(alpha: 0.4)
+                        : const Color(0xFFF59E0B).withValues(alpha: 0.4),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        info.isVerifiedHardware
-                            ? Icons.verified_rounded
-                            : Icons.insights_rounded,
-                        size: 12,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      info.isVerifiedHardware
+                          ? Icons.verified_rounded
+                          : Icons.insights_rounded,
+                      size: 12,
+                      color: info.isVerifiedHardware
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFFF59E0B),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      info.isVerifiedHardware
+                          ? tr('pmic_verified')
+                          : tr('estimated_mode'),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
                         color: info.isVerifiedHardware
                             ? const Color(0xFF10B981)
                             : const Color(0xFFF59E0B),
                       ),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          info.isVerifiedHardware
-                              ? tr('pmic_verified')
-                              : tr('estimated_mode'),
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: info.isVerifiedHardware
-                                ? const Color(0xFF10B981)
-                                : const Color(0xFFF59E0B),
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 8,
@@ -3174,52 +3358,58 @@ class _DashboardScreenState extends State<DashboardScreen>
 
           const SizedBox(height: 10),
 
-          // 4-Step Visual Ladder Segments
-          Row(
-            children: [
-              Expanded(
-                child: _buildLadderChip(
-                  stepNumber: 1,
-                  label: tr('step_standard_5v'),
-                  isActive: info.activeLadderStep == 1,
-                  activeColor: const Color(0xFF10B981),
+          // 4-Step Visual Ladder Segments (IntrinsicHeight ensures uniform dynamic expansion)
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _buildLadderChip(
+                    stepNumber: 1,
+                    label: tr('step_standard_5v'),
+                    isActive: info.activeLadderStep == 1,
+                    activeColor: const Color(0xFF10B981),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: _buildLadderChip(
-                  stepNumber: 2,
-                  label: tr('step_qualcomm_qc'),
-                  isActive: info.activeLadderStep == 2,
-                  activeColor: const Color(0xFFF97316),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: _buildLadderChip(
+                    stepNumber: 2,
+                    label: tr('step_qualcomm_qc'),
+                    isActive: info.activeLadderStep == 2,
+                    activeColor: const Color(0xFFF97316),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: _buildLadderChip(
-                  stepNumber: 3,
-                  label: tr('step_usb_pd'),
-                  isActive: info.activeLadderStep == 3,
-                  activeColor: const Color(0xFF38BDF8),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: _buildLadderChip(
+                    stepNumber: 3,
+                    label: tr('step_usb_pd'),
+                    isActive: info.activeLadderStep == 3,
+                    activeColor: const Color(0xFF38BDF8),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: _buildLadderChip(
-                  stepNumber: 4,
-                  label: tr('step_pd_pps_turbo'),
-                  isActive: info.activeLadderStep == 4,
-                  activeColor: const Color(0xFFA855F7),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: _buildLadderChip(
+                    stepNumber: 4,
+                    label: tr('step_pd_pps_turbo'),
+                    isActive: info.activeLadderStep == 4,
+                    activeColor: const Color(0xFFA855F7),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
 
           const SizedBox(height: 18),
 
-          // Speed Level Meter Bar
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Speed Level Meter Bar (Wrap prevents overflow between title & value)
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            runSpacing: 4,
+            spacing: 8,
             children: [
               Text(
                 tr('speed_level'),
@@ -3291,40 +3481,55 @@ class _DashboardScreenState extends State<DashboardScreen>
 
           const SizedBox(height: 18),
 
-          // Technical Parameter Grid (2x2)
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            childAspectRatio: 2.2,
-            children: [
-              _buildMicroParam(
-                title: tr('pd_status'),
-                value: info.pdStatusText,
-                color: const Color(0xFF38BDF8),
-                icon: Icons.electrical_services_rounded,
-              ),
-              _buildMicroParam(
-                title: tr('qc_status'),
-                value: info.qcStatusText,
-                color: const Color(0xFFF97316),
-                icon: Icons.speed_rounded,
-              ),
-              _buildMicroParam(
-                title: tr('pmic_register'),
-                value: info.pmicRegisterText,
-                color: const Color(0xFF10B981),
-                icon: Icons.memory_rounded,
-              ),
-              _buildMicroParam(
-                title: tr('line_voltage'),
-                value: info.inputVoltageStr,
-                color: const Color(0xFFF59E0B),
-                icon: Icons.power_input_rounded,
-              ),
-            ],
+          // Technical Parameter Grid (2x2) (IntrinsicHeight rows dynamically expand for full text)
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _buildMicroParam(
+                    title: tr('pd_status'),
+                    value: info.pdStatusText,
+                    color: const Color(0xFF38BDF8),
+                    icon: Icons.electrical_services_rounded,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildMicroParam(
+                    title: tr('qc_status'),
+                    value: info.qcStatusText,
+                    color: const Color(0xFFF97316),
+                    icon: Icons.speed_rounded,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _buildMicroParam(
+                    title: tr('pmic_register'),
+                    value: info.pmicRegisterText,
+                    color: const Color(0xFF10B981),
+                    icon: Icons.memory_rounded,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildMicroParam(
+                    title: tr('line_voltage'),
+                    value: info.inputVoltageStr,
+                    color: const Color(0xFFF59E0B),
+                    icon: Icons.power_input_rounded,
+                  ),
+                ),
+              ],
+            ),
           ),
 
           const SizedBox(height: 14),
@@ -3407,13 +3612,12 @@ class _DashboardScreenState extends State<DashboardScreen>
           Text(
             label,
             textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+            softWrap: true,
             style: TextStyle(
               fontSize: 10,
               fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
               color: isActive ? Colors.white : Colors.white38,
-              height: 1.1,
+              height: 1.15,
             ),
           ),
         ],
@@ -3489,13 +3693,14 @@ class _DashboardScreenState extends State<DashboardScreen>
     required IconData icon,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
         color: const Color(0xFF0F172A).withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.white10),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
             padding: const EdgeInsets.all(6),
@@ -3517,20 +3722,20 @@ class _DashboardScreenState extends State<DashboardScreen>
                     fontSize: 10,
                     color: Colors.white54,
                     fontWeight: FontWeight.w500,
+                    height: 1.2,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  softWrap: true,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 Text(
                   value,
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
+                    height: 1.2,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  softWrap: true,
                 ),
               ],
             ),
