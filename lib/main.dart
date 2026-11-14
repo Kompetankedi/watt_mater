@@ -60,6 +60,7 @@ class LanguageManager {
       'cannot_calculate': 'Hesaplanamıyor',
       'full_in_mins': '{} dk sonra tam dolu',
       'battery_health': 'Pil Sağlığı / Ömrü',
+      'cycles_count': '{} döngü',
       'device_info': 'Cihaz Bilgileri',
       'model': 'Model',
       'android_version': 'Android Sürümü',
@@ -203,6 +204,7 @@ class LanguageManager {
       'cannot_calculate': 'Cannot calculate',
       'full_in_mins': 'Fully charged in {} mins',
       'battery_health': 'Battery Health / Lifespan',
+      'cycles_count': '{} cycles',
       'device_info': 'Device Information',
       'model': 'Model',
       'android_version': 'Android Version',
@@ -346,6 +348,7 @@ class LanguageManager {
       'cannot_calculate': 'No se puede calcular',
       'full_in_mins': 'Carga completa en {} min',
       'battery_health': 'Salud / Vida útil de la batería',
+      'cycles_count': '{} ciclos',
       'device_info': 'Información del dispositivo',
       'model': 'Modelo',
       'android_version': 'Versión de Android',
@@ -600,10 +603,10 @@ echo "---BATTERY---"
 echo "capacity=$(cat /sys/class/power_supply/battery/capacity 2>/dev/null || echo '0')"
 echo "voltage=$(cat /sys/class/power_supply/battery/voltage_now 2>/dev/null || echo '0')"
 echo "current=$(cat /sys/class/power_supply/battery/current_now 2>/dev/null || echo '0')"
-echo "charge_full=$(cat /sys/class/power_supply/bms/charge_full 2>/dev/null || cat /sys/class/power_supply/battery/charge_full 2>/dev/null || echo '0')"
+echo "charge_full=$(cat /sys/class/power_supply/bms/charge_full 2>/dev/null || cat /sys/class/power_supply/battery/charge_full 2>/dev/null || cat /sys/class/qcom-battery/fg1_fcc 2>/dev/null || echo '0')"
 echo "charge_full_design=$(cat /sys/class/power_supply/bms/charge_full_design 2>/dev/null || cat /sys/class/power_supply/battery/charge_full_design 2>/dev/null || echo '0')"
 echo "status=$(cat /sys/class/power_supply/battery/status 2>/dev/null || echo 'Unknown')"
-echo "batt_temp=$(cat /sys/class/power_supply/battery/temp 2>/dev/null || echo '0')"
+echo "batt_temp=$(cat /sys/class/power_supply/battery/temp 2>/dev/null || cat /sys/class/qcom-battery/bq2597x_battery_temp 2>/dev/null || echo '0')"
 ZONE=$(grep -li 'cpu' /sys/class/thermal/thermal_zone*/type 2>/dev/null | head -n 1)
 if [ -n "$ZONE" ]; then
   TEMP_FILE=$(echo "$ZONE" | sed 's/type/temp/')
@@ -612,23 +615,43 @@ else
   echo "cpu_temp=$(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null || echo '0')"
 fi
 
-echo "usb_real_type=$(cat /sys/class/power_supply/usb/real_type 2>/dev/null || echo '')"
+REAL_TYPE=$(cat /sys/class/power_supply/usb/real_type 2>/dev/null || cat /sys/class/qcom-battery/real_type 2>/dev/null || cat /sys/class/qcom-battery/usb_real_type 2>/dev/null || echo '')
+if [ -z "$REAL_TYPE" ]; then
+  REAL_TYPE=$(sed -n 's/.*\[\([^]]*\)\].*/\1/p' /sys/class/power_supply/usb/usb_type 2>/dev/null)
+fi
+echo "usb_real_type=$REAL_TYPE"
 echo "usb_type=$(cat /sys/class/power_supply/usb/type 2>/dev/null || echo '')"
-echo "pd_active=$(cat /sys/class/power_supply/usb/pd_active 2>/dev/null || echo '')"
+
+PD_SUP=$(cat /sys/class/typec/port0-partner/supports_usb_power_delivery 2>/dev/null || echo '')
+PWR_OP=$(cat /sys/class/typec/port0/pwr_opmode 2>/dev/null || cat /sys/class/typec/port0/power_operation_mode 2>/dev/null || echo '')
+PD_ACT=$(cat /sys/class/power_supply/usb/pd_active 2>/dev/null || echo '')
+if [ -z "$PD_ACT" ]; then
+  if [ "$PD_SUP" = "yes" ] || [ "$PWR_OP" = "usb_power_delivery" ] || [ "$REAL_TYPE" = "PD" ] || [ "$REAL_TYPE" = "PD_PPS" ]; then
+    PD_ACT="1"
+  elif [ "$PD_SUP" = "no" ] || [ "$REAL_TYPE" = "SDP" ] || [ "$REAL_TYPE" = "DCP" ] || [ "$REAL_TYPE" = "CDP" ]; then
+    PD_ACT="0"
+  fi
+fi
+echo "pd_active=$PD_ACT"
 echo "pd_allowed=$(cat /sys/class/power_supply/usb/pd_allowed 2>/dev/null || echo '')"
-echo "quick_charge_type=$(cat /sys/class/power_supply/usb/quick_charge_type 2>/dev/null || cat /sys/class/power_supply/usb/hvdcp3_type 2>/dev/null || echo '')"
-echo "typec_mode=$(cat /sys/class/power_supply/usb/typec_mode 2>/dev/null || echo '')"
-echo "pwr_opmode=$(cat /sys/class/typec/port0/pwr_opmode 2>/dev/null || cat /sys/class/typec/port0/power_operation_mode 2>/dev/null || echo '')"
-echo "usb_voltage_now=$(cat /sys/class/power_supply/usb/voltage_now 2>/dev/null || cat /sys/class/power_supply/usb/input_voltage_regulation 2>/dev/null || echo '')"
+echo "quick_charge_type=$(cat /sys/class/power_supply/usb/quick_charge_type 2>/dev/null || cat /sys/class/power_supply/usb/hvdcp3_type 2>/dev/null || cat /sys/class/qcom-battery/quick_charge_type 2>/dev/null || echo '')"
+echo "typec_mode=$(cat /sys/class/power_supply/usb/typec_mode 2>/dev/null || cat /sys/class/qcom-battery/typec_mode 2>/dev/null || echo '')"
+echo "pwr_opmode=$PWR_OP"
+echo "usb_voltage_now=$(cat /sys/class/power_supply/usb/voltage_now 2>/dev/null || cat /sys/class/qcom-battery/bq2597x_bus_voltage 2>/dev/null || cat /sys/class/power_supply/usb/input_voltage_regulation 2>/dev/null || echo '')"
 echo "usb_voltage_max=$(cat /sys/class/power_supply/usb/voltage_max 2>/dev/null || echo '')"
-echo "usb_current_max=$(cat /sys/class/power_supply/usb/current_max 2>/dev/null || cat /sys/class/power_supply/usb/hw_current_max 2>/dev/null || cat /sys/class/power_supply/usb/pd_current_max 2>/dev/null || echo '')"
+echo "usb_current_max=$(cat /sys/class/power_supply/usb/current_max 2>/dev/null || cat /sys/class/power_supply/usb/input_current_limit 2>/dev/null || cat /sys/class/power_supply/usb/hw_current_max 2>/dev/null || cat /sys/class/power_supply/usb/pd_current_max 2>/dev/null || echo '')"
 echo "charger_type=$(cat /sys/class/power_supply/usb/charger_type 2>/dev/null || cat /sys/class/power_supply/battery/charger_type 2>/dev/null || cat /sys/class/power_supply/main/charger_type 2>/dev/null || echo '')"
 echo "charge_type=$(cat /sys/class/power_supply/battery/charge_type 2>/dev/null || cat /sys/class/power_supply/main/charge_type 2>/dev/null || echo '')"
-echo "fastcharge_mode=$(cat /sys/class/power_supply/battery/fastcharge_mode 2>/dev/null || cat /sys/class/power_supply/battery/sub_fastcharge_mode 2>/dev/null || echo '')"
-echo "turbo_mode=$(cat /sys/class/power_supply/battery/turbo_mode 2>/dev/null || cat /sys/class/power_supply/battery/super_charging_mode 2>/dev/null || echo '')"
-echo "adapter_power=$(cat /sys/class/power_supply/battery/adapter_power 2>/dev/null || echo '')"
+echo "fastcharge_mode=$(cat /sys/class/power_supply/battery/fastcharge_mode 2>/dev/null || cat /sys/class/power_supply/battery/sub_fastcharge_mode 2>/dev/null || cat /sys/class/qcom-battery/fastchg_mode 2>/dev/null || echo '')"
+echo "turbo_mode=$(cat /sys/class/power_supply/battery/turbo_mode 2>/dev/null || cat /sys/class/power_supply/battery/super_charging_mode 2>/dev/null || cat /sys/class/qcom-battery/fg1_fastcharge 2>/dev/null || echo '')"
+echo "adapter_power=$(cat /sys/class/power_supply/battery/adapter_power 2>/dev/null || cat /sys/class/qcom-battery/power_max 2>/dev/null || echo '')"
+echo "adapter_svid=$(cat /sys/class/qcom-battery/adapter_svid 2>/dev/null || echo '')"
+echo "adapter_id=$(cat /sys/class/qcom-battery/adapter_id 2>/dev/null || echo '')"
 echo "vooc_mode=$(cat /sys/class/power_supply/battery/vooc_mode 2>/dev/null || cat /sys/class/power_supply/battery/fast_chg_type 2>/dev/null || echo '')"
 echo "sec_charger_type=$(cat /sys/class/power_supply/battery/charger_type 2>/dev/null || cat /sys/class/power_supply/battery/sec_battery 2>/dev/null || echo '')"
+echo "soh=$(cat /sys/class/qcom-battery/soh 2>/dev/null || cat /sys/class/qcom-battery/fg1_soh 2>/dev/null || echo '')"
+echo "soc_decimal=$(cat /sys/class/qcom-battery/soc_decimal 2>/dev/null || echo '')"
+echo "cycle_count=$(cat /sys/class/power_supply/battery/cycle_count 2>/dev/null || cat /sys/class/qcom-battery/fg1_cycle 2>/dev/null || echo '')"
 
 for p in /sys/class/power_supply/*; do
   if [ -d "$p" ]; then
@@ -687,15 +710,18 @@ done
         '''
 #!/system/bin/sh
 for file in /sys/class/power_supply/battery/constant_charge_current_max \\
+            /sys/class/power_supply/battery/constant_charge_current \\
             /sys/class/power_supply/battery/current_max \\
             /sys/class/power_supply/main/constant_charge_current_max \\
+            /sys/class/power_supply/usb/input_current_limit \\
             /sys/class/power_supply/usb/current_max \\
             /sys/class/power_supply/usb/hw_current_max \\
             /sys/class/power_supply/usb/pd_current_max \\
-            /sys/class/power_supply/pc_port/current_max; do
+            /sys/class/power_supply/pc_port/current_max \\
+            /sys/class/qcom-battery/restrict_cur; do
   if [ -f "\$file" ]; then
     chmod 644 "\$file" 2>/dev/null
-    echo $microAmps > "\$file"
+    echo $microAmps > "\$file" 2>/dev/null
   fi
 done
 ''';
@@ -707,17 +733,24 @@ done
     final script = '''
 #!/system/bin/sh
 for file in /sys/class/power_supply/battery/constant_charge_current_max \\
+            /sys/class/power_supply/battery/constant_charge_current \\
             /sys/class/power_supply/battery/current_max \\
             /sys/class/power_supply/main/constant_charge_current_max \\
+            /sys/class/power_supply/usb/input_current_limit \\
             /sys/class/power_supply/usb/current_max \\
             /sys/class/power_supply/usb/hw_current_max \\
             /sys/class/power_supply/usb/pd_current_max \\
-            /sys/class/power_supply/pc_port/current_max; do
+            /sys/class/power_supply/pc_port/current_max \\
+            /sys/class/qcom-battery/restrict_cur; do
   if [ -f "\$file" ]; then
     chmod 644 "\$file" 2>/dev/null
-    echo 30000000 > "\$file"
+    echo 30000000 > "\$file" 2>/dev/null
   fi
 done
+if [ -f /sys/class/power_supply/battery/charge_control_limit ]; then
+  chmod 644 /sys/class/power_supply/battery/charge_control_limit 2>/dev/null
+  echo 0 > /sys/class/power_supply/battery/charge_control_limit 2>/dev/null
+fi
 ''';
     await Process.run('su', ['-c', script]);
   }
@@ -824,15 +857,18 @@ class ChargingProtocolInfo {
     final realType = (rawStats['usb_real_type'] ??
             rawStats['ps_usb_real_type'] ??
             rawStats['real_type'] ??
+            rawStats['usb_real_type_qcom'] ??
+            rawStats['usb_real_type_qcom2'] ??
             '')
         .trim()
         .toUpperCase();
     final qcType = (rawStats['quick_charge_type'] ??
             rawStats['ps_usb_quick_charge_type'] ??
+            rawStats['quick_charge_type_qcom'] ??
             rawStats['hvdcp3_type'] ??
             '')
         .trim();
-    final typecMode = (rawStats['typec_mode'] ?? '').trim().toUpperCase();
+    final typecMode = (rawStats['typec_mode'] ?? rawStats['typec_mode_qcom'] ?? '').trim().toUpperCase();
     final pwrOpMode = (rawStats['pwr_opmode'] ??
             rawStats['power_operation_mode'] ??
             '')
@@ -845,9 +881,10 @@ class ChargingProtocolInfo {
         .trim()
         .toUpperCase();
     final chargeType = (rawStats['charge_type'] ?? '').trim();
-    final fastchargeMode = (rawStats['fastcharge_mode'] ?? '').trim();
-    final turboMode = (rawStats['turbo_mode'] ?? '').trim();
+    final fastchargeMode = (rawStats['fastcharge_mode'] ?? rawStats['fastcharge_mode_qcom'] ?? '').trim();
+    final turboMode = (rawStats['turbo_mode'] ?? rawStats['turbo_mode_qcom'] ?? '').trim();
     final adapterPower = (rawStats['adapter_power'] ?? '').trim();
+    final adapterSvid = (rawStats['adapter_svid'] ?? '').trim();
     final voocMode = (rawStats['vooc_mode'] ?? '').trim();
     final plugged = (rawStats['plugged'] ?? '').trim();
 
@@ -927,15 +964,21 @@ class ChargingProtocolInfo {
         chargerType.contains('PD');
 
     final bool qcCondition = effectiveRealType.contains('HVDCP') ||
+        effectiveRealType.contains('QC') ||
         (effectiveQcType.isNotEmpty && effectiveQcType != '0') ||
         chargerType.contains('QC') ||
         chargerType.contains('HVDCP');
 
     final bool turboCondition = turboMode == '1' ||
         fastchargeMode == '1' ||
+        fastchargeMode == '2' ||
         adapterPower == '33' ||
         adapterPower == '67' ||
-        adapterPower == '120';
+        adapterPower == '90' ||
+        adapterPower == '120' ||
+        (adapterSvid == '2717' && wattageW > 15.0) ||
+        effectiveRealType.contains('TURBO') ||
+        effectiveRealType.contains('HYPER');
 
     if (pdCondition) {
       isPd = true;
@@ -1035,7 +1078,9 @@ class ChargingProtocolInfo {
       ladderStep = 2;
       accent = const Color(0xFF06B6D4);
       icon = Icons.bolt_rounded;
-    } else if (effectiveRealType == 'USB_DCP' || chargerType.contains('DCP')) {
+    } else if (effectiveRealType == 'USB_DCP' ||
+        effectiveRealType == 'DCP' ||
+        chargerType.contains('DCP')) {
       protocolType = ChargingProtocolType.standardDcp;
       title = tr('protocol_dcp');
       subtitle = tr('sub_dcp');
@@ -1052,12 +1097,18 @@ class ChargingProtocolInfo {
       accent = const Color(0xFF8B5CF6);
       icon = Icons.wifi_protected_setup_rounded;
     } else if (effectiveRealType == 'USB_SDP' ||
+        effectiveRealType == 'SDP' ||
         effectiveRealType == 'USB_CDP' ||
+        effectiveRealType == 'CDP' ||
         plugged == 'USB') {
       protocolType = ChargingProtocolType.slowUsb;
       title = tr('protocol_sdp_cdp');
       subtitle = tr('sub_slow_usb');
-      code = effectiveRealType.isNotEmpty ? effectiveRealType : 'USB_SDP';
+      code = effectiveRealType.isNotEmpty
+          ? (effectiveRealType.startsWith('USB_')
+              ? effectiveRealType
+              : 'USB_$effectiveRealType')
+          : 'USB_SDP';
       ladderStep = 1;
       accent = const Color(0xFF64748B);
       icon = Icons.usb_rounded;
@@ -1192,6 +1243,7 @@ class BatteryStats {
   final String rom;
   final String status;
   final int percentage;
+  final String? socDecimal;
   final double voltageV;
   final double currentA;
   final int currentMA;
@@ -1199,6 +1251,8 @@ class BatteryStats {
   final int capacityMAh;
   final int designCapacityMAh;
   final double batteryHealth;
+  final int? cycleCount;
+  final double? hardwareSoh;
   final double cpuTempC;
   final double battTempC;
   final String timeRemainingStr;
@@ -1213,6 +1267,7 @@ class BatteryStats {
     required this.rom,
     required this.status,
     required this.percentage,
+    this.socDecimal,
     required this.voltageV,
     required this.currentA,
     required this.currentMA,
@@ -1220,6 +1275,8 @@ class BatteryStats {
     required this.capacityMAh,
     required this.designCapacityMAh,
     required this.batteryHealth,
+    this.cycleCount,
+    this.hardwareSoh,
     required this.cpuTempC,
     required this.battTempC,
     required this.timeRemainingStr,
@@ -1232,7 +1289,27 @@ class BatteryStats {
     Map<String, String> stats, {
     double? nativeBatteryTemp,
   }) {
-    final model = stats['ro.product.model'] ?? stats['model'] ?? tr('unknown');
+    final marketName = stats['ro.product.marketname'] ??
+        stats['ro.product.odm.marketname'] ??
+        stats['ro.product.vendor.marketname'] ??
+        stats['marketname'] ??
+        stats['odm_marketname'] ??
+        '';
+    final rawModel = stats['ro.product.model'] ?? stats['model'] ?? '';
+
+    String model = tr('unknown');
+    if (marketName.isNotEmpty && rawModel.isNotEmpty) {
+      if (marketName.toLowerCase().contains(rawModel.toLowerCase())) {
+        model = marketName;
+      } else {
+        model = '$marketName ($rawModel)';
+      }
+    } else if (marketName.isNotEmpty) {
+      model = marketName;
+    } else if (rawModel.isNotEmpty) {
+      model = rawModel;
+    }
+
     final androidVer =
         stats['ro.build.version.release'] ??
         stats['android_ver'] ??
@@ -1244,6 +1321,11 @@ class BatteryStats {
         stats['rom'] ??
         '';
     final romLower = romProp.toLowerCase();
+    final incProp = stats['ro.build.version.incremental'] ??
+        stats['ro.mi.os.version.incremental'] ??
+        stats['hyperos_incremental'] ??
+        stats['build_incremental'] ??
+        '';
 
     String romName = tr('unknown');
     String romVersion = '';
@@ -1255,9 +1337,20 @@ class BatteryStats {
           stats['ro.crdroid.version'] ??
           '';
     } else if (romLower.contains('hyperos') ||
-        (stats['ro.mi.os.version.name']?.isNotEmpty ?? false)) {
+        (stats['ro.mi.os.version.name']?.isNotEmpty ?? false) ||
+        incProp.startsWith('OS')) {
       romName = 'HyperOS';
-      romVersion = stats['ro.mi.os.version.name'] ?? '';
+      final baseName = stats['ro.mi.os.version.name'] ?? '';
+      if (incProp.isNotEmpty) {
+        final match = RegExp(r'OS(\d+\.\d+\.\d+)').firstMatch(incProp);
+        if (match != null) {
+          romVersion = '${match.group(1)} ($incProp)';
+        } else {
+          romVersion = incProp;
+        }
+      } else {
+        romVersion = baseName;
+      }
     } else if (romLower.contains('miui') ||
         (stats['ro.miui.ui.version.name']?.isNotEmpty ?? false)) {
       romName = 'MIUI';
@@ -1348,6 +1441,7 @@ class BatteryStats {
     }
 
     final percentage = parseVal(stats['capacity']).toInt();
+    final socDecimal = stats['soc_decimal']?.trim();
 
     final rawVoltage = parseVal(stats['voltage']);
     final rawCurrent = parseVal(stats['current']);
@@ -1395,8 +1489,20 @@ class BatteryStats {
       designCapacityMAh = rawChargeFullDesign.toInt();
     }
 
+    final int? cycleCount = int.tryParse(stats['cycle_count'] ?? '');
+    double? hardwareSoh;
+    final rawSoh = stats['soh'];
+    if (rawSoh != null && rawSoh.isNotEmpty && rawSoh != '0') {
+      final sohVal = double.tryParse(rawSoh);
+      if (sohVal != null && sohVal > 0 && sohVal <= 100) {
+        hardwareSoh = sohVal / 100.0;
+      }
+    }
+
     double batteryHealth = 0.0;
-    if (designCapacityMAh > 0 && capacityMAh > 0) {
+    if (hardwareSoh != null) {
+      batteryHealth = hardwareSoh;
+    } else if (designCapacityMAh > 0 && capacityMAh > 0) {
       batteryHealth = (capacityMAh / designCapacityMAh).clamp(0.0, 1.0);
     }
 
@@ -1560,6 +1666,7 @@ class BatteryStats {
       rom: rom,
       status: status,
       percentage: percentage,
+      socDecimal: socDecimal,
       voltageV: voltageV,
       currentA: currentA,
       currentMA: currentMA,
@@ -1567,6 +1674,8 @@ class BatteryStats {
       capacityMAh: capacityMAh,
       designCapacityMAh: designCapacityMAh,
       batteryHealth: batteryHealth,
+      cycleCount: cycleCount,
+      hardwareSoh: hardwareSoh,
       cpuTempC: cpuTempC,
       battTempC: battTempC,
       timeRemainingStr: timeRemainingStr,
@@ -2544,7 +2653,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                           child: _buildInfoCard(
                             icon: Icons.percent_rounded,
                             title: tr('charge_percentage'),
-                            value: '%$percentage',
+                            value: (stats.socDecimal != null && stats.socDecimal!.isNotEmpty && stats.socDecimal != '0')
+                                ? '%$percentage.${stats.socDecimal!.padLeft(2, '0')}'
+                                : '%$percentage',
                             color: const Color(0xFF8B5CF6),
                           ),
                         ),
@@ -2702,7 +2813,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      '%${(batteryHealth * 100).toStringAsFixed(1)} ($capacityMAh / $designCapacityMAh mAh)',
+                                      '%${(batteryHealth * 100).toStringAsFixed(1)} ($capacityMAh / $designCapacityMAh mAh)${stats.cycleCount != null && stats.cycleCount! > 0 ? ' • ${tr('cycles_count', [stats.cycleCount.toString()])}' : ''}',
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 16,
