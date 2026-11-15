@@ -61,6 +61,17 @@ class LanguageManager {
       'full_in_mins': '{} dk sonra tam dolu',
       'battery_health': 'Pil Sağlığı / Ömrü',
       'cycles_count': '{} döngü',
+      'aldente_power_title': 'Adaptör & Güç Analizi',
+      'aldente_currently': 'Şu anda',
+      'aldente_voltage': 'Voltaj',
+      'aldente_power': 'Güç',
+      'max_adapter_power': 'Maks. Adaptör Gücü',
+      'max_short': 'Maks',
+      'adapter_note_active': 'Bağlı adaptör en fazla {}W sağlayabilir (Şu an %{} çekiliyor)',
+      'adapter_note_unplugged': 'Adaptör bağlı değil (Batarya gücü)',
+      'adapter_label': 'Adaptör',
+      'charging_active': 'Şarj Aktif',
+      'battery_power': 'Batarya Gücü',
       'device_info': 'Cihaz Bilgileri',
       'model': 'Model',
       'android_version': 'Android Sürümü',
@@ -205,6 +216,17 @@ class LanguageManager {
       'full_in_mins': 'Fully charged in {} mins',
       'battery_health': 'Battery Health / Lifespan',
       'cycles_count': '{} cycles',
+      'aldente_power_title': 'Adapter & Power Analysis',
+      'aldente_currently': 'Currently',
+      'aldente_voltage': 'Voltage',
+      'aldente_power': 'Power',
+      'max_adapter_power': 'Max Adapter Power',
+      'max_short': 'Max',
+      'adapter_note_active': 'Connected adapter can supply up to {}W (Currently drawing {}%)',
+      'adapter_note_unplugged': 'Adapter not connected (Battery power)',
+      'adapter_label': 'Adapter',
+      'charging_active': 'Charging Active',
+      'battery_power': 'Battery Power',
       'device_info': 'Device Information',
       'model': 'Model',
       'android_version': 'Android Version',
@@ -349,6 +371,17 @@ class LanguageManager {
       'full_in_mins': 'Carga completa en {} min',
       'battery_health': 'Salud / Vida útil de la batería',
       'cycles_count': '{} ciclos',
+      'aldente_power_title': 'Análisis de Adaptador y Potencia',
+      'aldente_currently': 'Actualmente',
+      'aldente_voltage': 'Voltaje',
+      'aldente_power': 'Potencia',
+      'max_adapter_power': 'Potencia Máx. Adaptador',
+      'max_short': 'Máx',
+      'adapter_note_active': 'El adaptador conectado puede suministrar hasta {}W (Actualmente usando {}%)',
+      'adapter_note_unplugged': 'Adaptador no conectado (Energía de batería)',
+      'adapter_label': 'Adaptador',
+      'charging_active': 'Carga Activa',
+      'battery_power': 'Energía de Batería',
       'device_info': 'Información del dispositivo',
       'model': 'Modelo',
       'android_version': 'Versión de Android',
@@ -644,7 +677,14 @@ echo "charger_type=$(cat /sys/class/power_supply/usb/charger_type 2>/dev/null ||
 echo "charge_type=$(cat /sys/class/power_supply/battery/charge_type 2>/dev/null || cat /sys/class/power_supply/main/charge_type 2>/dev/null || echo '')"
 echo "fastcharge_mode=$(cat /sys/class/power_supply/battery/fastcharge_mode 2>/dev/null || cat /sys/class/power_supply/battery/sub_fastcharge_mode 2>/dev/null || cat /sys/class/qcom-battery/fastchg_mode 2>/dev/null || echo '')"
 echo "turbo_mode=$(cat /sys/class/power_supply/battery/turbo_mode 2>/dev/null || cat /sys/class/power_supply/battery/super_charging_mode 2>/dev/null || cat /sys/class/qcom-battery/fg1_fastcharge 2>/dev/null || echo '')"
-echo "adapter_power=$(cat /sys/class/power_supply/battery/adapter_power 2>/dev/null || cat /sys/class/qcom-battery/power_max 2>/dev/null || echo '')"
+echo "adapter_power=$(cat /sys/class/power_supply/battery/adapter_power 2>/dev/null || cat /sys/class/power_supply/usb/adapter_power 2>/dev/null || cat /sys/class/qcom-battery/power_max 2>/dev/null || echo '')"
+echo "power_max=$(cat /sys/class/qcom-battery/power_max 2>/dev/null || cat /sys/class/power_supply/usb/power_max 2>/dev/null || cat /sys/class/power_supply/battery/power_max 2>/dev/null || echo '')"
+echo "input_power_max=$(cat /sys/class/power_supply/usb/input_power_max 2>/dev/null || cat /sys/class/qcom-battery/input_power_max 2>/dev/null || echo '')"
+echo "ap_max_power=$(cat /sys/class/qcom-battery/ap_max_power 2>/dev/null || echo '')"
+echo "qc_max_power=$(cat /sys/class/qcom-battery/qc_max_power 2>/dev/null || echo '')"
+echo "pd_power_max=$(cat /sys/class/power_supply/usb/pd_power_max 2>/dev/null || cat /sys/class/qcom-battery/pd_power_max 2>/dev/null || echo '')"
+echo "battery_model_name=$(cat /sys/class/power_supply/battery/model_name 2>/dev/null || echo '')"
+echo "pdos=$(cat /sys/class/qcom-battery/pdo* /sys/class/typec/port0-partner/pdo* 2>/dev/null | tr '\n' ' ' || echo '')"
 echo "adapter_svid=$(cat /sys/class/qcom-battery/adapter_svid 2>/dev/null || echo '')"
 echo "adapter_id=$(cat /sys/class/qcom-battery/adapter_id 2>/dev/null || echo '')"
 echo "vooc_mode=$(cat /sys/class/power_supply/battery/vooc_mode 2>/dev/null || cat /sys/class/power_supply/battery/fast_chg_type 2>/dev/null || echo '')"
@@ -797,6 +837,8 @@ class ChargingProtocolInfo {
   final String pdStatusText;
   final String qcStatusText;
   final String pmicRegisterText;
+  final double? maxAdapterPowerW;
+  final String maxAdapterPowerStr;
   final Color accentColor;
   final IconData icon;
   final Map<String, String> debugRegisters;
@@ -815,6 +857,8 @@ class ChargingProtocolInfo {
     required this.pdStatusText,
     required this.qcStatusText,
     required this.pmicRegisterText,
+    this.maxAdapterPowerW,
+    this.maxAdapterPowerStr = '-',
     required this.accentColor,
     required this.icon,
     required this.debugRegisters,
@@ -835,6 +879,8 @@ class ChargingProtocolInfo {
       pdStatusText: tr('inactive'),
       qcStatusText: tr('inactive'),
       pmicRegisterText: '-',
+      maxAdapterPowerW: null,
+      maxAdapterPowerStr: '-',
       accentColor: const Color(0xFF64748B),
       icon: Icons.power_off_rounded,
       debugRegisters: {},
@@ -1204,6 +1250,183 @@ class ChargingProtocolInfo {
           hasHardwareIndicators ? tr('pmic_read') : tr('pmic_rootless');
     }
 
+    // --- AlDente Max Adapter Power Calculation ---
+    double? maxAdapterW;
+
+    // 1. Direct hardware power nodes from PMIC/Kernel
+    final rawPowerMax = rawStats['power_max'] ??
+        rawStats['power_max_usb'] ??
+        rawStats['power_max_batt'] ??
+        rawStats['adapter_power'] ??
+        rawStats['adapter_power_usb'] ??
+        rawStats['input_power_max'] ??
+        rawStats['ap_max_power'] ??
+        rawStats['qc_max_power'] ??
+        rawStats['pd_power_max'] ??
+        '';
+    if (rawPowerMax.isNotEmpty) {
+      final pVal = double.tryParse(rawPowerMax);
+      if (pVal != null && pVal > 0) {
+        if (pVal > 100000) {
+          maxAdapterW = pVal / 1000000.0; // microwatts to W
+        } else if (pVal > 150) {
+          maxAdapterW = pVal / 1000.0; // milliwatts to W
+        } else {
+          maxAdapterW = pVal; // Watts
+        }
+      }
+    }
+
+    // 2. Maximum negotiated voltage & current (sysfs or Android BatteryManager)
+    final rawVMax = double.tryParse(rawStats['usb_voltage_max'] ??
+            rawStats['voltage_max'] ??
+            rawStats['max_charging_voltage'] ??
+            '') ??
+        0.0;
+    final rawIMax = double.tryParse(rawStats['usb_current_max'] ??
+            rawStats['current_max'] ??
+            rawStats['input_current_limit'] ??
+            rawStats['usb_input_current_limit'] ??
+            rawStats['max_charging_current'] ??
+            '') ??
+        0.0;
+
+    if (rawVMax > 0 && rawIMax > 0) {
+      final double vMaxV = rawVMax > 100000
+          ? rawVMax / 1000000.0
+          : (rawVMax > 100 ? rawVMax / 1000.0 : rawVMax);
+      final double iMaxA = rawIMax > 100000
+          ? rawIMax / 1000000.0
+          : (rawIMax > 50 ? rawIMax / 1000.0 : rawIMax);
+      final calcPowerW = vMaxV * iMaxA;
+      if (calcPowerW >= 2.0 && calcPowerW <= 300.0) {
+        if (maxAdapterW == null || calcPowerW > maxAdapterW) {
+          maxAdapterW = calcPowerW;
+        }
+      }
+    }
+
+    // 3. USB-PD Power Data Objects (PDOs)
+    final pdoEntries = <String>[];
+    final rawPdos = rawStats['pdos'] ?? '';
+    if (rawPdos.isNotEmpty) {
+      pdoEntries.addAll(rawPdos.split(RegExp(r'[\s\n,]+')));
+    }
+    for (var i = 1; i <= 7; i++) {
+      final p = rawStats['pdo$i'];
+      if (p != null && p.trim().isNotEmpty) {
+        pdoEntries.add(p.trim());
+      }
+    }
+    for (final pdoHex in pdoEntries) {
+      final cleanHex = pdoHex.replaceAll('0x', '').trim();
+      final pdoVal = int.tryParse(cleanHex, radix: 16);
+      if (pdoVal != null && pdoVal > 0) {
+        final type = (pdoVal >> 30) & 0x03;
+        if (type == 0) {
+          // Fixed Supply: Voltage in 50mV (bits 19..10), Current in 10mA (bits 9..0)
+          final v = ((pdoVal >> 10) & 0x3FF) * 0.05;
+          final i = (pdoVal & 0x3FF) * 0.01;
+          final pdoW = v * i;
+          if (pdoW > 0 && (maxAdapterW == null || pdoW > maxAdapterW)) {
+            maxAdapterW = pdoW;
+          }
+        } else if (type == 3) {
+          // Augmented PDO (PPS): Max Voltage in 100mV (bits 24..17), Max Current in 50mA (bits 6..0)
+          final vMax = ((pdoVal >> 17) & 0xFF) * 0.1;
+          final iMax = (pdoVal & 0x7F) * 0.05;
+          final ppsW = vMax * iMax;
+          if (ppsW > 0 && (maxAdapterW == null || ppsW > maxAdapterW)) {
+            maxAdapterW = ppsW;
+          }
+        }
+      }
+    }
+
+    // 4. Xiaomi Fast Charge / Turbo Mode / Battery Model Name inspection
+    final batteryModelName = (rawStats['battery_model_name'] ?? rawStats['model_name'] ?? '').toLowerCase();
+    double? deviceMaxHardwareW;
+    final wattMatch = RegExp(r'(\d+)\s*w').firstMatch(batteryModelName);
+    if (wattMatch != null) {
+      deviceMaxHardwareW = double.tryParse(wattMatch.group(1)!);
+    }
+
+    if (turboCondition) {
+      if (adapterPower.isNotEmpty && double.tryParse(adapterPower) != null) {
+        final apW = double.parse(adapterPower);
+        if (apW >= 15.0) {
+          maxAdapterW = apW;
+        }
+      } else if (lineVoltage != null && lineVoltage >= 18.0) {
+        maxAdapterW = deviceMaxHardwareW != null && deviceMaxHardwareW >= 90.0
+            ? deviceMaxHardwareW
+            : 90.0;
+      } else if (lineVoltage != null && lineVoltage >= 10.0) {
+        maxAdapterW = (wattageW > 33.0) ? 67.0 : 33.0;
+      } else if (deviceMaxHardwareW != null && wattageW > 25.0) {
+        maxAdapterW = deviceMaxHardwareW;
+      }
+    }
+
+    // 5. Standards Fallback when charging
+    if (maxAdapterW == null || maxAdapterW < 2.0) {
+      if (isPps) {
+        if (wattageW > 45.0) {
+          maxAdapterW = 65.0;
+        } else if (wattageW > 30.0) {
+          maxAdapterW = 45.0;
+        } else if (wattageW > 20.0) {
+          maxAdapterW = 30.0;
+        } else {
+          maxAdapterW = 27.0;
+        }
+      } else if (isPd) {
+        if (wattageW > 45.0) {
+          maxAdapterW = 65.0;
+        } else if (wattageW > 30.0) {
+          maxAdapterW = 45.0;
+        } else if (wattageW > 20.0) {
+          maxAdapterW = 30.0;
+        } else if (wattageW > 15.0) {
+          maxAdapterW = 20.0;
+        } else {
+          maxAdapterW = 18.0;
+        }
+      } else if (isQc) {
+        if (effectiveQcType == '4') {
+          maxAdapterW = 27.0;
+        } else if (wattageW > 18.0) {
+          maxAdapterW = 27.0;
+        } else {
+          maxAdapterW = 18.0;
+        }
+      } else if (protocolType == ChargingProtocolType.standardDcp) {
+        maxAdapterW = (wattageW > 7.5) ? 10.0 : 7.5;
+      } else if (protocolType == ChargingProtocolType.slowUsb) {
+        maxAdapterW = (wattageW > 2.5) ? 4.5 : 2.5;
+      }
+    }
+
+    // 6. Guarantee: Max adapter power cannot be smaller than active drawn power
+    if (maxAdapterW != null && wattageW > maxAdapterW) {
+      const standardTiers = [
+        2.5, 5.0, 7.5, 10.0, 15.0, 18.0, 20.0, 25.0, 27.0, 30.0, 33.0, 45.0,
+        50.0, 65.0, 67.0, 80.0, 90.0, 100.0, 120.0, 140.0, 240.0
+      ];
+      maxAdapterW = standardTiers.firstWhere(
+        (t) => t >= wattageW,
+        orElse: () => wattageW.ceilToDouble(),
+      );
+    }
+
+    String maxAdapterPowerStr;
+    if (maxAdapterW != null && maxAdapterW > 0) {
+      final isInt = (maxAdapterW % 1 == 0);
+      maxAdapterPowerStr = '${maxAdapterW.toStringAsFixed(isInt ? 0 : 1)} W';
+    } else {
+      maxAdapterPowerStr = '-';
+    }
+
     return ChargingProtocolInfo(
       protocolType: protocolType,
       speedLevel: speedLevel,
@@ -1218,6 +1441,8 @@ class ChargingProtocolInfo {
       pdStatusText: pdStatusText,
       qcStatusText: qcStatusText,
       pmicRegisterText: pmicRegisterText,
+      maxAdapterPowerW: maxAdapterW,
+      maxAdapterPowerStr: maxAdapterPowerStr,
       accentColor: accent,
       icon: icon,
       debugRegisters: {
@@ -1253,6 +1478,7 @@ class BatteryStats {
   final double batteryHealth;
   final int? cycleCount;
   final double? hardwareSoh;
+  final double? maxAdapterPowerW;
   final double cpuTempC;
   final double battTempC;
   final String timeRemainingStr;
@@ -1277,6 +1503,7 @@ class BatteryStats {
     required this.batteryHealth,
     this.cycleCount,
     this.hardwareSoh,
+    this.maxAdapterPowerW,
     required this.cpuTempC,
     required this.battTempC,
     required this.timeRemainingStr,
@@ -1676,6 +1903,7 @@ class BatteryStats {
       batteryHealth: batteryHealth,
       cycleCount: cycleCount,
       hardwareSoh: hardwareSoh,
+      maxAdapterPowerW: protocolInfo.maxAdapterPowerW,
       cpuTempC: cpuTempC,
       battTempC: battTempC,
       timeRemainingStr: timeRemainingStr,
@@ -2568,7 +2796,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                                       ? wattageW.toStringAsFixed(1)
                                       : '-${wattageW.toStringAsFixed(1)}',
                                   style: TextStyle(
-                                    fontSize: 64,
+                                    fontSize: (isCharging && stats.maxAdapterPowerW != null && stats.maxAdapterPowerW! > 0) ? 54 : 64,
                                     fontWeight: FontWeight.w900,
                                     color: isCharging
                                         ? Colors.white
@@ -2576,12 +2804,47 @@ class _DashboardScreenState extends State<DashboardScreen>
                                     height: 1.0,
                                   ),
                                 ),
+                                if (isCharging && stats.maxAdapterPowerW != null && stats.maxAdapterPowerW! > 0) ...[
+                                  const SizedBox(height: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF38BDF8).withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: const Color(0xFF38BDF8).withValues(alpha: 0.35),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.power_rounded,
+                                          size: 11,
+                                          color: Color(0xFF38BDF8),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '${wattageW.toStringAsFixed(1)} W • ${stats.protocolInfo.maxAdapterPowerStr} ${tr('max_short')}',
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF38BDF8),
+                                            fontFamily: 'monospace',
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                ],
                                 Text(
                                   isCharging
                                       ? tr('charge_watt')
                                       : tr('discharge_watt'),
                                   style: TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 13,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 1.5,
                                     color: isCharging
@@ -2601,6 +2864,11 @@ class _DashboardScreenState extends State<DashboardScreen>
 
                   // Charging Protocol & PD vs QC Gauge
                   _buildChargingProtocolGauge(context, stats),
+
+                  const SizedBox(height: 28),
+
+                  // AlDente Adapter & Power Analysis Card
+                  _buildAlDentePowerCard(context, stats),
 
                   const SizedBox(height: 28),
 
@@ -3128,6 +3396,301 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
+  Widget _buildAlDentePowerCard(BuildContext context, BatteryStats stats) {
+    final isCharging = stats.isCharging;
+    final wattageW = stats.wattageW;
+    final maxAdapterW = stats.protocolInfo.maxAdapterPowerW;
+    final currentA = stats.currentA;
+    final voltageV = stats.voltageV;
+    final lineVoltage = stats.protocolInfo.inputVoltageStr;
+
+    double? utilizationPct;
+    if (isCharging && maxAdapterW != null && maxAdapterW > 0) {
+      utilizationPct = (wattageW / maxAdapterW * 100).clamp(0.0, 100.0);
+    }
+
+    final currentDisplay = isCharging
+        ? '${currentA.toStringAsFixed(2)} A (${stats.currentMA} mA)'
+        : '-${currentA.toStringAsFixed(2)} A (-${stats.currentMA} mA)';
+
+    final voltDisplay = (isCharging &&
+            lineVoltage.isNotEmpty &&
+            lineVoltage != '-')
+        ? lineVoltage
+        : '${voltageV.toStringAsFixed(2)} V';
+
+    final maxAdapterStr = (maxAdapterW != null && maxAdapterW > 0)
+        ? '${maxAdapterW.toStringAsFixed(maxAdapterW % 1 == 0 ? 0 : 1)} W'
+        : (isCharging ? '~' : '-');
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B).withValues(alpha: 0.75),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isCharging
+              ? const Color(0xFF38BDF8).withValues(alpha: 0.3)
+              : Colors.white10,
+          width: isCharging ? 1.5 : 1.0,
+        ),
+        boxShadow: isCharging
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF38BDF8).withValues(alpha: 0.10),
+                  blurRadius: 20,
+                  spreadRadius: 2,
+                ),
+              ]
+            : null,
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isCharging
+                      ? const Color(0xFF38BDF8).withValues(alpha: 0.15)
+                      : Colors.white10,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.power_rounded,
+                  color: isCharging ? const Color(0xFF38BDF8) : Colors.white60,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tr('aldente_power_title'),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isCharging
+                          ? (maxAdapterW != null && maxAdapterW > 0
+                              ? '$maxAdapterStr ${tr('adapter_label')}'
+                              : tr('charging_active'))
+                          : tr('battery_power'),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isCharging ? const Color(0xFF38BDF8) : Colors.white54,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (isCharging && maxAdapterW != null && maxAdapterW > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFA855F7).withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: const Color(0xFFA855F7).withValues(alpha: 0.4),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Text(
+                    '$maxAdapterStr ${tr('max_short').toUpperCase()}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFFA855F7),
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(color: Colors.white10, height: 1),
+          const SizedBox(height: 14),
+
+          // AlDente style rows matching ornek.png
+          _buildAlDenteRow(
+            badge: '[ I ]',
+            badgeColor: const Color(0xFFF43F5E),
+            label: tr('aldente_currently'),
+            valueWidget: Text(
+              currentDisplay,
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildAlDenteRow(
+            badge: '[ U ]',
+            badgeColor: const Color(0xFFF59E0B),
+            label: tr('aldente_voltage'),
+            valueWidget: Text(
+              voltDisplay,
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildAlDenteRow(
+            badge: '[ P ]',
+            badgeColor: const Color(0xFF38BDF8),
+            label: tr('aldente_power'),
+            valueWidget: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  isCharging
+                      ? '${wattageW.toStringAsFixed(2)} W'
+                      : '-${wattageW.toStringAsFixed(2)} W',
+                  style: TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: isCharging ? const Color(0xFF38BDF8) : Colors.white70,
+                  ),
+                ),
+                if (isCharging && maxAdapterW != null && maxAdapterW > 0) ...[
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      '•',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white38,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    maxAdapterStr,
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFFA855F7),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          if (isCharging && utilizationPct != null) ...[
+            const SizedBox(height: 16),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: LinearProgressIndicator(
+                value: (utilizationPct / 100.0).clamp(0.0, 1.0),
+                backgroundColor: Colors.white10,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  utilizationPct > 80
+                      ? const Color(0xFFF43F5E)
+                      : (utilizationPct > 50
+                          ? const Color(0xFF38BDF8)
+                          : const Color(0xFF10B981)),
+                ),
+                minHeight: 6,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              tr('adapter_note_active', [
+                maxAdapterStr.replaceAll(' W', ''),
+                utilizationPct.toStringAsFixed(1),
+              ]),
+              style: const TextStyle(
+                fontSize: 11,
+                color: Colors.white60,
+                height: 1.3,
+              ),
+            ),
+          ] else if (!isCharging) ...[
+            const SizedBox(height: 12),
+            Text(
+              tr('adapter_note_unplugged'),
+              style: const TextStyle(
+                fontSize: 11,
+                color: Colors.white38,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAlDenteRow({
+    required String badge,
+    required Color badgeColor,
+    required String label,
+    required Widget valueWidget,
+  }) {
+    return Row(
+      children: [
+        Icon(Icons.power_rounded, size: 16, color: badgeColor),
+        const SizedBox(width: 4),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+          decoration: BoxDecoration(
+            color: badgeColor.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: badgeColor.withValues(alpha: 0.4), width: 0.8),
+          ),
+          child: Text(
+            badge,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: badgeColor,
+              fontFamily: 'monospace',
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          '$label:',
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.white70,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: valueWidget,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildChargingProtocolGauge(BuildContext context, BatteryStats stats) {
     final info = stats.protocolInfo;
     final isCharging = stats.isCharging;
@@ -3637,6 +4200,33 @@ class _DashboardScreenState extends State<DashboardScreen>
                     value: info.inputVoltageStr,
                     color: const Color(0xFFF59E0B),
                     icon: Icons.power_input_rounded,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _buildMicroParam(
+                    title: tr('max_adapter_power'),
+                    value: info.maxAdapterPowerStr,
+                    color: const Color(0xFFA855F7),
+                    icon: Icons.power_rounded,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildMicroParam(
+                    title: tr('aldente_power'),
+                    value: isCharging
+                        ? '${stats.wattageW.toStringAsFixed(1)} W'
+                        : '-${stats.wattageW.toStringAsFixed(1)} W',
+                    color: const Color(0xFF38BDF8),
+                    icon: Icons.bolt_rounded,
                   ),
                 ),
               ],

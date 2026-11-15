@@ -79,6 +79,17 @@ class MainActivity : FlutterActivity() {
             if (temp != -1) {
                 map["batt_temp"] = temp.toString() 
             }
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                val maxCur = intent.getIntExtra("max_charging_current", -1)
+                if (maxCur > 0) {
+                    map["max_charging_current"] = maxCur.toString()
+                }
+                val maxVolt = intent.getIntExtra("max_charging_voltage", -1)
+                if (maxVolt > 0) {
+                    map["max_charging_voltage"] = maxVolt.toString()
+                }
+            }
         }
 
         val batteryManager = getSystemService(Context.BATTERY_SERVICE) as BatteryManager
@@ -116,6 +127,17 @@ class MainActivity : FlutterActivity() {
             "turbo_mode_qcom" to "/sys/class/qcom-battery/fg1_fastcharge",
             "usb_voltage_now" to "/sys/class/power_supply/usb/voltage_now",
             "usb_voltage_max" to "/sys/class/power_supply/usb/voltage_max",
+            "usb_current_max" to "/sys/class/power_supply/usb/current_max",
+            "usb_input_current_limit" to "/sys/class/power_supply/usb/input_current_limit",
+            "power_max" to "/sys/class/qcom-battery/power_max",
+            "power_max_usb" to "/sys/class/power_supply/usb/power_max",
+            "power_max_batt" to "/sys/class/power_supply/battery/power_max",
+            "adapter_power" to "/sys/class/power_supply/battery/adapter_power",
+            "adapter_power_usb" to "/sys/class/power_supply/usb/adapter_power",
+            "input_power_max" to "/sys/class/power_supply/usb/input_power_max",
+            "battery_model_name" to "/sys/class/power_supply/battery/model_name",
+            "adapter_svid" to "/sys/class/qcom-battery/adapter_svid",
+            "adapter_id" to "/sys/class/qcom-battery/adapter_id",
             "soh" to "/sys/class/qcom-battery/soh",
             "soc_decimal" to "/sys/class/qcom-battery/soc_decimal",
             "cycle_count" to "/sys/class/power_supply/battery/cycle_count"
